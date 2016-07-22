@@ -1,0 +1,36 @@
+Package: polmineR.topics
+Type: Package
+Title: tools for topicmodelling
+Version: 0.1.7
+Date: 2016-06-08
+Author: Andreas Blaette
+Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
+Description: Auxiliary functions for topicmodelling.
+Depends:
+  methods,
+  data.table,
+  R6
+Imports:
+  polmineR,
+  Hmisc,
+  topicmodels,
+  zoo,
+  rJava,
+  Rmpfr
+LazyData: NA
+License: NA
+Collate:
+  'read_method.R'
+  'Topicanalysis_class.R'
+  'ggplot.R'
+  'ldaBundle_class.R'
+  'as.zoo_method.R'
+  'cooccurrences_method.R'
+  'topicmodelsCmd_function.R'
+  'as.mallet_method.R'
+  'store_method.R'
+  'rustyard.R'
+  'dotchart_method.R'
+  'shiny_function.R'
+  'TopicanalysisBundle_class.R'
+RoxygenNote: 5.0.1

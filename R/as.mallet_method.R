@@ -1,0 +1,162 @@
+#' interface to mallet topicmodelling
+#' 
+#' Turn partitionBundle into a mallet object (instance list). The typical 
+#' workflow will be as follows (see example): (1) Turn partitionBundle-object
+#' into mallet instance list; (2a) store the resulting jobjRef-object locally
+#' using store-method, create mallet command with malletCmd, and run mallet
+#' from the command line; or (2b) run mallet topic modelling from within R.
+#' 
+#' 
+#' @param .Object partition- or partitionBundle-object
+#' @param termsToDrop stopwords
+#' @param ... further parameters
+#' @param pAttribute the pAttribute to use, typically "word" or "lemma"
+#' @param mc whether to use multicore
+#' @param verbose logical, whether to be verbose
+#' @param object the rJava-object
+#' @param filename where to store the Java-object
+#' @exportMethod as.mallet
+#' @examples 
+#' \dontrun{
+#' use("polmineR.sampleCorpus")
+#' bt2009 <- partition("PLPRBTTXT", text_year="2009")
+#' bt2009bundle <- partitionBundle(bt2009, def=list(text_protocol_no=NULL), pAttribute=NULL)
+#' instanceList <- as.mallet(bt2009bundle)
+#' fname <- store(instanceList, filename=NULL) # output to a tempfile
+#' topic.model <- MalletLDA(num.topics=20)
+#' topic.model$loadDocuments(instanceList)
+#' topic.model$setAlphaOptimization(20, 50)
+#' topic.model$train(200)
+#' }
+#' @rdname mallet
+setGeneric("as.mallet", function(.Object, ...) standardGeneric("as.mallet"))
+
+#' @param termsToDrop typically, a list of stopwords
+#' @rdname mallet
+#' @importFrom polmineR getTokenStream
+setMethod("as.mallet", "partitionBundle", function(.Object, pAttribute="word", termsToDrop=tm::stopwords("de"), mc=TRUE, verbose=TRUE){
+  options(java.parameters = "-Xmx8g")
+  if (require("mallet", quietly=TRUE)){
+    if (verbose == TRUE) message("... mallet-package loaded")
+  } else {
+    warning("mallet package not available")
+    stop()
+  }
+  if (mc == FALSE){
+    if (verbose == TRUE) message("... reconstructing token stream (mc=FALSE)")
+    tokenStream <- lapply(
+      .Object@objects,
+      function(x) getTokenStream(x, pAttribute=pAttribute, collapse="\n")
+      )
+  } else if (mc == TRUE){
+    if (verbose == TRUE) message("... reconstructing token stream (mc=TRUE)")
+    tokenStream <- mclapply(
+      .Object@objects,
+      function(x) getTokenStream(x, pAttribute=pAttribute, collapse="\n")
+      )
+  }
+  tokenStreamVector <- unlist(tokenStream)
+  tmpDir <- tempdir()
+  stoplistFile <- file.path(tmpDir, "stoplists.txt")
+  cat(paste(termsToDrop, collapse="\n"), file=stoplistFile)
+  # malletFile <- file.path(tmpDir, "partitionBundle.mallet")
+  if (verbose == TRUE) message("... make mallet object")
+  malletObject <- mallet::mallet.import(
+    id.array=names(.Object), text.array=tokenStreamVector,
+    stoplist.file=stoplistFile, preserve.case=T
+#    , token.regexp="\\n"
+  )
+  return(malletObject)
+})
+
+#' @export malletCmd
+#' @rdname mallet
+malletCmd <- function(sourcefile, targetDir="/Users/blaette/Lab/tmp/foo", topwords=50, topics=50, iterations=2000, threads=1){
+  stopifnot(
+    is.numeric(topics), topics > 2,
+    is.numeric(iterations), iterations > 1,
+    is.numeric(topwords), topwords > 2,
+    is.numeric(threads), threads > 0
+  )
+  
+  # check whether targetDir exists
+  if (file.exists(targetDir) == FALSE){
+    dir.create(targetDir)
+    message("... creating targetDir")
+  } else {
+    if (file.info(targetDir)[,"isdir"] == FALSE){
+      stop("targetDir is not a directore, but an existing file")
+    }
+  }
+
+  cmd <- c(
+    "/opt/mallet/bin/mallet", "train-topics",
+    "--input", sourcefile,
+    "--num-topics", topics,
+    "--num-iterations", iterations,
+    "--output-state", file.path(targetDir, "state.gz"),
+    "--output-doc-topics", file.path(targetDir, "doc-topics.csv"),
+    "--output-topic-keys", file.path(targetDir, "topics-keys.csv"),
+    "--num-top-words", topwords,
+    "--num-threads", threads,
+    "--xml-topic-report", file.path(targetDir, "xmlTopicReport.xml"),
+    "--topic-word-weights-file", file.path(targetDir, "wordWeights.csv"),
+    "--xml-topic-phrase-report", file.path(targetDir, "topicPhraseReport.xml")
+    )
+  paste(cmd, collapse=" ")
+}
+
+#' @import xml2
+malletImport <- function(dir="/Users/blaette/Lab/tmp/foo"){
+  
+  retval <- list()
+  
+  message("... importing doc-topics.csv")
+  docsTopics <- read.csv(file=file.path(dir, "doc-topics.csv"), sep="\t", header=FALSE)
+  rownames(docsTopics) <- as.character(c(1:nrow(docsTopics)))
+  docsTopicsMatrix <- as.matrix(docsTopics[, c(3:ncol(docsTopics))])
+  colnames(docsTopicsMatrix) <- as.character(c(1:ncol(docsTopicsMatrix)))
+  retval[["docsTopicsMatrix"]] <- docsTopicsMatrix
+  
+  # gzConnection <- gzfile(file.path(dir, "state.gz"))
+  # foo <- read.csv(gzConnection)
+  
+  message("... importing topics-keys.csv")
+  topicKeysRaw <- read.csv(
+    file=file.path(dir, "topics-keys.csv"), sep="\t", header=FALSE,
+    stringsAsFactors=FALSE
+    )
+  topicKeysMatrix <- as.matrix(data.frame(strsplit(topicKeysRaw[[3]], "\\s")))
+  colnames(topicKeysMatrix) <- NULL
+  retval[["topicKeysMatrix"]] <- topicKeysMatrix
+  
+  message("... importing word-weights.csv")
+  foo <- read.table(file.path(dir, "wordWeights.csv"), sep="\t")
+  
+  
+  message("... importing topicPhraseReport.xml")
+  topicPhraseXmlDoc <- read_xml(file.path(dir, "topicPhraseReport.xml"))
+  topicNodes <- xml_find_all(topicPhraseXmlDoc, "/topics/topic")
+  topicPhraseReportDf <- do.call(rbind, lapply(
+    topicNodes,
+    function(x){
+      do.call(rbind, lapply(
+        c("word", "phrase"),
+        function(what){
+          childrenToGet <- xml_find_all(x, paste("./", what, sep=""))
+          cbind(
+            topic=rep(xml_attrs(x)["id"], times=length(childrenToGet)),
+            what=rep(what, times=length(childrenToGet)),
+            token=sapply(childrenToGet, xml_text),
+            do.call(rbind, lapply(childrenToGet, xml_attrs))
+          )
+        }
+      ))
+    }
+  ))
+  topicPhraseReportDT <- as.data.table(topicPhraseReportDf)
+  
+  retval[["topicPhraseReportDT"]] <- topicPhraseReportDT
+  retval
+  
+}
