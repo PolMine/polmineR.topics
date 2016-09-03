@@ -6,26 +6,6 @@
 #' @field foo something
 #' @examples 
 #' \dontrun{
-#' source("/Users/blaette/Lab/repos/diffusion/code/01_global_variables.R")
-#' B <- TopicanalysisBundle$new()
-#' B$filenames <- filenames
-#' B$getTerms()
-#' B$dist <- readRDS("/Users/blaette/Lab/repos/diffusion/data/n_topics_250/dist_binary_take2.RData")
-#' colnames(B$dist) <- colnames(B$terms)
-#' rownames(B$dist) <- colnames(B$terms)
-#' B$dist <- as.dist(B$dist)
-#' B$hclust <- hclust(B$dist, method="ward.D")
-#' B$hclust$height <- B$hclust$height[order(B$hclust$height)]
-#' png("/Users/blaette/Lab/tmp/dendrogram.png", width = 30000, height = 30000)
-#' plot(as.dendrogram(B$hclust), horiz = T, cex = 0.01)
-#' dev.off()
-#' 
-#' B$getClusters(h = 1.2)
-#' names(B$clusters)[as.integer(names(B$query("Integration")[1]))] <- "Integration"
-#' 
-#' B$restore()
-#' B$assignLabels()
-#' 
 #' }
 #' @export TopicanalysisBundle
 TopicanalysisBundle <- R6Class(
@@ -48,7 +28,7 @@ TopicanalysisBundle <- R6Class(
     
     hclust = NULL,
     
-    clusters = NULL,
+    topicClusters = NULL,
     
     length = function() length(self$topicmodels),
     
@@ -108,7 +88,7 @@ TopicanalysisBundle <- R6Class(
         names(self$filenames),
         function(id){
           if (verbose) message("... loading and processing topicmodel: ", id)
-          topicmodel <- readRDS(file = self$filenames[[id]]["lda"])
+          topicmodel <- readRDS(file = self$filenames[[id]])
           M <- topicmodels::terms(topicmodel, k = k)
           colnames(M) <- paste(id, c(1:ncol(M)), sep="::")
           M
@@ -133,7 +113,7 @@ TopicanalysisBundle <- R6Class(
     },
     
     
-    makeTermTopicMatrix = function(output = "matrix", minimize = FALSE, verbose = TRUE, ...){
+    makeTermTopicMatrix = function(output = "matrix", minimize = FALSE, verbose = TRUE, progress = TRUE, mc = FALSE, ...){
       stopifnot(output %in% c("matrix", "simple_triplet_matrix", "big.matrix"))
       names(self$topicmodels) <- sapply(self$topicmodels, function(x) x$name)
       if (output == "matrix"){
@@ -164,16 +144,15 @@ TopicanalysisBundle <- R6Class(
       } else if (output %in% c("simple_triplet_matrix", "big.matrix")){
         
         if (verbose) message("... generate index and overall information")
-        pb <- txtProgressBar(max = length(self$filenames), style = 3, width = getOption("width") - 8)
-        info <- lapply(
+        info <- blapply(
           c(1:length(self$filenames)),
-          function(i){
-            setTxtProgressBar(pb, value=i)
-            M <- readRDS(self$filenames[[i]])
+          function(i, filenames, ...){
+            M <- readRDS(filenames[[i]])
             list(terms=M@terms, k=M@k)
-          }
+          },
+          filenames = self$filenames,
+          mc = mc, verbose = FALSE, progress = progress
         )
-        close(pb)
         names(info) <- names(self$filenames)
         
         if (verbose) message("... generating indices")
@@ -186,32 +165,38 @@ TopicanalysisBundle <- R6Class(
         
         
         if (output == "simple_triplet_matrix"){
-          dfList <- lapply(
-            names(self$filenames),
-            function(id){
-              message("... topicmodel: ", id)
-              topicmodel <- readRDS(self$filenames[[id]])
-              termTopicMatrix <- t(topicmodels::posterior(topicmodel)[["terms"]])
-              rm(topicmodel)
-              pb <- txtProgressBar(max = ncol(termTopicMatrix), style=3, width = getOption("width") - 10)
-              dfList <- lapply(
-                  c(1:ncol(termTopicMatrix)),
-                  function(i){
-                    setTxtProgressBar(pb, value = i)
-                    column <- termTopicMatrix[,i]
-                    if (minimize) column <- column[-which(column == min(column))]
-                    data.frame(
-                      i = unname(termIndex[names(column)]),
-                      j = unname(labelIndex[paste(id, i, sep="::")]),
-                      v = unname(column)
-                      )
-                  }
+
+          .getTermTopics <- function(id, filenames, ...){
+            if (mc) progress <- FALSE
+            message("... topicmodel: ", id)
+            topicmodel <- readRDS(filenames[[id]])
+            termTopicMatrix <- t(topicmodels::posterior(topicmodel)[["terms"]])
+            rm(topicmodel)
+            if (progress) pb <- txtProgressBar(max = ncol(termTopicMatrix), style=3, width = getOption("width") - 10)
+            dfList <- lapply(
+              c(1:ncol(termTopicMatrix)),
+              function(i){
+                if (progress) setTxtProgressBar(pb, value = i)
+                column <- termTopicMatrix[,i]
+                if (minimize) column <- column[-which(column == min(column))]
+                data.frame(
+                  i = unname(termIndex[names(column)]),
+                  j = unname(labelIndex[paste(id, i, sep="::")]),
+                  v = unname(column)
                 )
-              
-              close(pb)
-              do.call(rbind, dfList)
-            }
+              }
             )
+            
+            if (progress) close(pb)
+            do.call(rbind, dfList)
+          }
+          dfList <- blapply(
+            names(self$filenames),
+            f = .getTermTopics,
+            filenames = self$filenames,
+            mc = mc, progress = progress, verbose = FALSE
+          )
+          
           self$termTopicMatrix <- slam::simple_triplet_matrix(
             i = unlist(lapply(dfList, function(x) x$i)),
             j = unlist(lapply(dfList, function(x) x$j)),
@@ -249,13 +234,13 @@ TopicanalysisBundle <- R6Class(
       }
     },
     
-    similarity = function(...){
+    getTopicSimilarity = function(...){
       message("... calculating cosine similarity")
       self$simil <- polmineR.misc::similarity(self$termTopicMatrix, ...)
       invisible(self$simil)
     },
     
-    distance = function(chunks = 1, method="binary", mc = FALSE, progress = TRUE, verbose = TRUE){
+    getTopicDistance = function(chunks = 1, method = "binary", mc = FALSE, progress = TRUE, verbose = TRUE){
       if (is.null(self$terms) || class(self$terms) != "simple_triplet_matrix"){
         stop("object of class 'simple_triplet_matrix' needs to be available in field terms")
       }
@@ -275,33 +260,84 @@ TopicanalysisBundle <- R6Class(
       plot(as.dendrogram(self$hclust), ...)
     },
     
-    getClusters = function(h, k=25){
-      groups <- cutree(self$hclust, h=h)
+    getTopicClusters = function(h, k = 25){
+      
+      "Get clusters of topics that are similar because they share terms. The method
+      will fill the field 'clusters' of the class with a list of matrices (rows are
+      the top terms indicating a topic."
+      
+      stopifnot(is(self$hclust) == "hclust")
+      if (is.null(self$terms)) stop("slot terms is missing")
+      groups <- cutree(self$hclust, h = h)
       clusterList <- split(x = names(groups), f = unname(groups))
       M <- lapply(split(self$terms$v, self$terms$j), function(x) self$terms$dimnames[[1]][x])
       M <- do.call(cbind, M)
       colnames(M) <- colnames(self$terms)
-      # .getTerms <- function(topics, ...){
-      #   select <- self$terms[, topics]
-      #   cols <- lapply(split(select$v, select$j), function(x) self$terms$dimnames[[1]][x])
-      #   do.call(cbind, cols)
-      # }
-      self$clusters <- lapply(clusterList, function(x) M[,x])
+      self$topicClusters <- lapply(clusterList, function(x) M[,x])
     },
     
-    label = function(min = 0, max = 12){
-      clusterLength <- sapply(self$clusters, ncol)
+    labelTopicClusters = function(min = 0, max = 25){
+      
+      "Skip through topicClusters and assign labels to the clusters."
+      
+      clusterLength <- sapply(self$topicClusters, ncol)
       toGet <- intersect(which(clusterLength >= min), which(clusterLength <= max))
-      for (i in toGet){
-        View(self$clusters[[i]])
-        labelToAssign <- readline(prompt = ">>> ")
-        if (labelToAssign %in% names(self$clusters)) message("label already exists")
-        if (labelToAssign != "") names(self$clusters)[i] <- labelToAssign
+      i <- 1
+      while (TRUE){
+        if (i > length(self$topicClusters)) break
+        View(self$topicClusters[[i]])
+        if (!grepl("^\\d+$", names(self$topicClusters)[i])){
+          message("label assigned: ", names(self$topicClusters)[i])
+        }
+
+        toAssign <- readline(prompt = paste("[", i, "/", length(self$topicClusters), "] ", sep=""))
+        if (toAssign == "+"){
+          i <- i + 1
+        } else if (toAssign == "-"){
+          i <- i - 1
+        } else if (toAssign == "exit"){
+          break
+        } else if (toAssign == "show"){ 
+          topTerms <- lapply(
+            self$topicClusters,
+            function(x){
+              y <- table(as.vector(x))
+              y <- setNames(as.vector(y), names(y))
+              y <- y[order(y, decreasing = TRUE)]
+              names(y)[1:10]
+            })
+          View(
+            x = data.frame(
+              no = 1:length(self$topicClusters),
+              label = names(self$topicClusters),
+              as.data.frame(do.call(rbind, topTerms))
+              ),
+            title = "topic overview"
+          )
+        } else if (toAssign %in% c("?", "help")){
+          cat ("+ | - | exit | ? | help")
+        } else if (grepl("^\\d+$", toAssign)){
+          if (as.numeric(toAssign) <= length(self$topicClusters)){
+            i <- as.numeric(toAssign)
+          }
+        } else if (toAssign == "continue"){
+          notInteger <- which(grepl("^\\d+$", names(self$topicClusters)) == FALSE)
+          if (length(notInteger > 0)) i <- max(notInteger) + 1
+        } else if (toAssign != ""){
+          if (toAssign %in% names(self$topicClusters)) {
+            message("label already exists")
+          } else {
+            names(self$topicClusters)[i] <- toAssign
+            i <- i + 1
+          }
+        } else {
+          i <- i + 1
+        }
       }
     },
     
     assignLabels = function(){
-      labels <- names(self$clusters)
+      labels <- names(self$topicClusters)
       labels <- labels[!is.na(labels)]
       labels <- labels[which(labels != "")]
       dummy <- lapply(
