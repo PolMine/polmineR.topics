@@ -12,30 +12,32 @@ TopicanalysisBundle <- R6Class(
   
   "TopicanalysisBundle",
   
-  public=list(
+  public = list(
+    
+    # fields 
     
     topicmodels = list(),
-    
     filenames = NULL,
-    
     terms = NULL,
-    
     termTopicMatrix = NULL,
-    
     simil = NULL,
-    
     dist = NULL,
-    
+    distMatrix = NULL,
     hclust = NULL,
-    
     topicClusters = NULL,
+    categories = NULL, # a data.frame
+    
+    
+    # methods
     
     length = function() length(self$topicmodels),
     
     names = function() unname(sapply(self$topicmodels, function(x) x$name)),
     
-    restore = function(x=NULL, verbose = TRUE){
+    restore = function(x = NULL, verbose = TRUE){
+      
       "restore it"
+      
       if (is.null(x)) x <- names(self$filenames)
       B$topicmodels <- lapply(
         setNames(x, x),
@@ -274,9 +276,58 @@ TopicanalysisBundle <- R6Class(
       M <- do.call(cbind, M)
       colnames(M) <- colnames(self$terms)
       self$topicClusters <- lapply(clusterList, function(x) M[,x])
+      names(self$topicClusters) <- paste("(", names(self$topicClusters), ")", sep = "")
     },
     
-    labelTopicClusters = function(min = 0, max = 25){
+    makeOverviewTopicClusters = function(n = 10, terms = TRUE){
+      
+      "Based on the topic clusters in the 'topicClusters'-field, the method will return
+      a data.frame with the topic number, the topic label and the n most frequent words
+      in the matrix."
+      
+      DF <- data.frame(
+        cluster_no = 1:length(self$topicClusters),
+        no_topics = sapply(self$topicClusters, ncol),
+        label = names(self$topicClusters)
+      )
+      if (terms){
+        topTermsList <- lapply(
+          self$topicClusters,
+          function(x){
+            y <- table(as.vector(x))
+            y <- setNames(as.vector(y), names(y))
+            y <- y[order(y, decreasing = TRUE)]
+            names(y)[1:n]
+          })
+        topTermsDF <- as.data.frame(do.call(rbind, topTermsList))
+        colnames(topTermsDF) <- paste("rank", c(1:ncol(topTermsDF)), sep = "_")
+        DF <- data.frame(DF, topTermsDF)
+      }
+      rownames(DF) <- as.character(c(1:nrow(DF)))
+      return(DF)
+      
+    },
+    
+    plotClusterDendrogram = function(topicNo, verbose = TRUE){
+      topics <- colnames(self$topicClusters[[topicNo]])
+      distMatrix <- as.matrix(self$dist)
+      distMatrixSubset <- distMatrix[topics, topics]
+      distObjectSubset <- as.dist(distMatrixSubset)
+      H <- hclust(distObjectSubset, method = "ward.D")
+      D <- as.dendrogram(H)
+      plot(D, horiz = T, cex = 0.01)
+    },
+    
+    plotHeatmap = function(i){
+      topicIds <- colnames(self$topicClusters[[i]])
+      distMatrixSubset <- distMatrix[topicIds, topicIds]
+      distObjectSubset <- as.dist(distMatrixSubset)
+      H <- hclust(distObjectSubset, method = "ward.D")
+      D <- as.dendrogram(H)
+      heatmap.2(distMatrixSubset, Rowv = D, Colv = "Rowv")
+    },
+    
+    labelTopicClusters = function(min = 0, max = 25, heatmap = FALSE){
       
       "Skip through topicClusters and assign labels to the clusters."
       
@@ -285,53 +336,64 @@ TopicanalysisBundle <- R6Class(
       i <- 1
       while (TRUE){
         if (i > length(self$topicClusters)) break
-        View(self$topicClusters[[i]])
-        if (!grepl("^\\d+$", names(self$topicClusters)[i])){
-          message("label assigned: ", names(self$topicClusters)[i])
-        }
-
-        toAssign <- readline(prompt = paste("[", i, "/", length(self$topicClusters), "] ", sep=""))
-        if (toAssign == "+"){
-          i <- i + 1
-        } else if (toAssign == "-"){
-          i <- i - 1
-        } else if (toAssign == "exit"){
-          break
-        } else if (toAssign == "show"){ 
-          topTerms <- lapply(
-            self$topicClusters,
-            function(x){
-              y <- table(as.vector(x))
-              y <- setNames(as.vector(y), names(y))
-              y <- y[order(y, decreasing = TRUE)]
-              names(y)[1:10]
-            })
-          View(
-            x = data.frame(
-              no = 1:length(self$topicClusters),
-              label = names(self$topicClusters),
-              as.data.frame(do.call(rbind, topTerms))
-              ),
-            title = "topic overview"
+        # generate output: cluster no and nrow of the matrix
+        cat(
+          "Showing terms for cluster ", i, "/", length(self$topicClusters),
+          " (", ncol(self$topicClusters[[i]]), " topics)\n",
+          sep=""
           )
-        } else if (toAssign %in% c("?", "help")){
-          cat ("+ | - | exit | ? | help")
-        } else if (grepl("^\\d+$", toAssign)){
-          if (as.numeric(toAssign) <= length(self$topicClusters)){
-            i <- as.numeric(toAssign)
-          }
-        } else if (toAssign == "continue"){
-          notInteger <- which(grepl("^\\d+$", names(self$topicClusters)) == FALSE)
-          if (length(notInteger > 0)) i <- max(notInteger) + 1
-        } else if (toAssign != ""){
-          if (toAssign %in% names(self$topicClusters)) {
-            message("label already exists")
-          } else {
-            names(self$topicClusters)[i] <- toAssign
+        cat("label assigned: ", names(self$topicClusters)[i], "\n")
+        View(self$topicClusters[[i]], title = names(self$topicClusters)[i])
+        
+        if (heatmap == TRUE) self$plotHeatmap(i = i)
+
+        if (is.data.frame(self$categories)){
+          toAssign <- polmineR.misc::selectLabel(x = self$categories)
+        } else {
+          toAssign <- readline(prompt = ">> ")
+        }
+        
+        if (toAssign == ""){
+          whatToDo <- select.list(choices = c("retry", "next", "previous", "overview", "help", "continue", "ambigious", "freehand", "exit"))
+          if (whatToDo == "retry"){
+            dummy <- 1
+          } else if (whatToDo == "next"){
+            i <- i + 1
+          } else if (whatToDo == "previous"){
+            i <- i - 1
+          } else if (whatToDo == "exit"){
+            break
+          } else if (whatToDo == "overview"){ 
+            View(
+              x = self$makeOverviewTopicClusters(),
+              title = "topic overview"
+              )
+            readline(prompt = "Hit a key to continue ...")
+          } else if (whatToDo == "continue"){
+            labelled <- which(grepl("^\\d+$", names(self$topicClusters)) == FALSE)
+            if (length(labelled > 0)) i <- max(labelled) + 1
+          } else if (whatToDo == "freehand"){
+            names(self$topicClusters)[i] <- readline(prompt = "freehand >>> ")
+            i <- i + 1
+          } else if (whatToDo == "ambigious"){
+            names(self$topicClusters)[i] <- "()"
             i <- i + 1
           }
         } else {
-          i <- i + 1
+          if (toAssign %in% names(self$topicClusters)) {
+            message("label already exists, assign anyway?")
+            whatToDo <- select.list(choices = c("yes", "no"))
+            if (whatToDo == "yes"){
+              message("assigning label: ", toAssign)
+              names(self$topicClusters)[i] <- toAssign
+              i <- i + 1
+            }
+          } else {
+            message("assigning label: ", toAssign)
+            names(self$topicClusters)[i] <- toAssign
+            i <- i + 1
+          }
+          
         }
       }
     },
