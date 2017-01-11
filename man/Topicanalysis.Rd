@@ -11,6 +11,14 @@ Topicanalysis
 \description{
 Analyse topicmodels.
 }
+\section{Methods}{
+
+\describe{
+\item{\code{cooccurrences(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE)}}{
+Get cooccurrences of topics. Params are documented with the S4 cooccurrences-method for TopicModel-objects.
+}
+}
+}
 \examples{
 \dontrun{
 library(polmineR.topics)

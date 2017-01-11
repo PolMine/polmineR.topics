@@ -5,7 +5,7 @@ library(data.table)
 # library(shinyBS)
 # library(polmineR)
 
-topicanalysisObjects <- polmineR:::.getClassObjectsAvailable('.GlobalEnv', 'Topicanalysis')
+topicanalysisObjects <- polmineR::getObjects('Topicanalysis', envir = .GlobalEnv)
 shinyThemeToUse <- shinytheme("cerulean") # alternatives: flatly, cerulean
 toPassOver <- c()
 

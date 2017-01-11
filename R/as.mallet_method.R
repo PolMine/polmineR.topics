@@ -1,10 +1,12 @@
-#' interface to mallet topicmodelling
+#' Interface to mallet topicmodelling.
 #' 
 #' Turn partitionBundle into a mallet object (instance list). The typical 
-#' workflow will be as follows (see example): (1) Turn partitionBundle-object
-#' into mallet instance list; (2a) store the resulting jobjRef-object locally
-#' using store-method, create mallet command with malletCmd, and run mallet
-#' from the command line; or (2b) run mallet topic modelling from within R.
+#' workflow will be as follows (see example):
+#' (1) Turn partitionBundle-object into mallet instance list;
+#' (2a) store the resulting jobjRef-object locally using store-method,
+#' create mallet command with malletCmd, and run mallet from the command line;
+#' alternativelly:
+#' (2b) run mallet topic modelling from within R.
 #' 
 #' 
 #' @param .Object partition- or partitionBundle-object
@@ -20,13 +22,15 @@
 #' \dontrun{
 #' use("polmineR.sampleCorpus")
 #' bt2009 <- partition("PLPRBTTXT", text_year="2009")
-#' bt2009bundle <- partitionBundle(bt2009, def=list(text_protocol_no=NULL), pAttribute=NULL)
+#' bt2009bundle <- partitionBundle(bt2009, sAttribute= "text_protocol_no", pAttribute = NULL)
 #' instanceList <- as.mallet(bt2009bundle)
-#' fname <- store(instanceList, filename=NULL) # output to a tempfile
-#' topic.model <- MalletLDA(num.topics=20)
+#' topic.model <- MalletLDA(num.topics = 20)
 #' topic.model$loadDocuments(instanceList)
 #' topic.model$setAlphaOptimization(20, 50)
-#' topic.model$train(200)
+#' topic.model$train(2000)
+#' 
+#' fname <- store(instanceList, filename = NULL) # output to a tempfile
+#' system(malletCmd(fname))
 #' }
 #' @rdname mallet
 setGeneric("as.mallet", function(.Object, ...) standardGeneric("as.mallet"))
@@ -34,7 +38,7 @@ setGeneric("as.mallet", function(.Object, ...) standardGeneric("as.mallet"))
 #' @param termsToDrop typically, a list of stopwords
 #' @rdname mallet
 #' @importFrom polmineR getTokenStream
-setMethod("as.mallet", "partitionBundle", function(.Object, pAttribute="word", termsToDrop=tm::stopwords("de"), mc=TRUE, verbose=TRUE){
+setMethod("as.mallet", "partitionBundle", function(.Object, pAttribute = "word", termsToDrop = tm::stopwords("de"), mc = TRUE, verbose = TRUE){
   options(java.parameters = "-Xmx8g")
   if (require("mallet", quietly=TRUE)){
     if (verbose == TRUE) message("... mallet-package loaded")
@@ -46,32 +50,32 @@ setMethod("as.mallet", "partitionBundle", function(.Object, pAttribute="word", t
     if (verbose == TRUE) message("... reconstructing token stream (mc=FALSE)")
     tokenStream <- lapply(
       .Object@objects,
-      function(x) getTokenStream(x, pAttribute=pAttribute, collapse="\n")
+      function(x) getTokenStream(x, pAttribute = pAttribute, collapse = "\n")
       )
   } else if (mc == TRUE){
-    if (verbose == TRUE) message("... reconstructing token stream (mc=TRUE)")
+    if (verbose == TRUE) message("... reconstructing token stream (mc = TRUE)")
     tokenStream <- mclapply(
       .Object@objects,
-      function(x) getTokenStream(x, pAttribute=pAttribute, collapse="\n")
+      function(x) getTokenStream(x, pAttribute = pAttribute, collapse = "\n")
       )
   }
   tokenStreamVector <- unlist(tokenStream)
+  
   tmpDir <- tempdir()
   stoplistFile <- file.path(tmpDir, "stoplists.txt")
-  cat(paste(termsToDrop, collapse="\n"), file=stoplistFile)
-  # malletFile <- file.path(tmpDir, "partitionBundle.mallet")
+  cat(paste(termsToDrop, collapse = "\n"), file = stoplistFile)
+  
   if (verbose == TRUE) message("... make mallet object")
   malletObject <- mallet::mallet.import(
-    id.array=names(.Object), text.array=tokenStreamVector,
-    stoplist.file=stoplistFile, preserve.case=T
-#    , token.regexp="\\n"
+    id.array = names(.Object), text.array = tokenStreamVector,
+    stoplist.file = stoplistFile, preserve.case = TRUE
   )
   return(malletObject)
 })
 
 #' @export malletCmd
 #' @rdname mallet
-malletCmd <- function(sourcefile, targetDir="/Users/blaette/Lab/tmp/foo", topwords=50, topics=50, iterations=2000, threads=1){
+malletCmd <- function(sourcefile, targetDir = "/Users/blaette/Lab/tmp/mallet_result", topwords = 50, topics = 50, iterations = 2000, threads = 1){
   stopifnot(
     is.numeric(topics), topics > 2,
     is.numeric(iterations), iterations > 1,
@@ -107,12 +111,13 @@ malletCmd <- function(sourcefile, targetDir="/Users/blaette/Lab/tmp/foo", topwor
 }
 
 #' @import xml2
-malletImport <- function(dir="/Users/blaette/Lab/tmp/foo"){
+#' @rdname mallet
+malletImport <- function(dir = "/Users/blaette/Lab/tmp/mallet_result"){
   
   retval <- list()
   
   message("... importing doc-topics.csv")
-  docsTopics <- read.csv(file=file.path(dir, "doc-topics.csv"), sep="\t", header=FALSE)
+  docsTopics <- read.csv(file = file.path(dir, "doc-topics.csv"), sep = "\t", header = FALSE)
   rownames(docsTopics) <- as.character(c(1:nrow(docsTopics)))
   docsTopicsMatrix <- as.matrix(docsTopics[, c(3:ncol(docsTopics))])
   colnames(docsTopicsMatrix) <- as.character(c(1:ncol(docsTopicsMatrix)))
@@ -123,15 +128,31 @@ malletImport <- function(dir="/Users/blaette/Lab/tmp/foo"){
   
   message("... importing topics-keys.csv")
   topicKeysRaw <- read.csv(
-    file=file.path(dir, "topics-keys.csv"), sep="\t", header=FALSE,
+    file = file.path(dir, "topics-keys.csv"), sep="\t", header=FALSE,
     stringsAsFactors=FALSE
     )
   topicKeysMatrix <- as.matrix(data.frame(strsplit(topicKeysRaw[[3]], "\\s")))
   colnames(topicKeysMatrix) <- NULL
   retval[["topicKeysMatrix"]] <- topicKeysMatrix
   
+  
   message("... importing word-weights.csv")
-  foo <- read.table(file.path(dir, "wordWeights.csv"), sep="\t")
+  
+  wordWeightsRaw <- read.table(file.path(dir, "wordWeights.csv"), sep = "\t")
+  wordsUnique <- unique(wordWeightsRaw[,2])
+  wordIndex <- setNames(1:length(wordsUnique), wordsUnique)
+  wordWeightsRaw[,2] <- wordIndex[wordWeightsRaw[,2]]
+  wordWeightsRaw <- subset(wordWeightsRaw, V3 > min(wordWeightsRaw[,3]))
+  wordWeightsSlam <- simple_triplet_matrix(
+    i = wordWeightsRaw[,2],
+    j = wordWeightsRaw[,1] + 1,
+    v = wordWeightsRaw[,3],
+    dimnames = list(
+      names(wordIndex),
+      as.character(1:(max(wordWeightsRaw[,1]) + 1))
+      )
+  )
+  retval[["wordWeights"]] <- wordWeightsSlam
   
   
   message("... importing topicPhraseReport.xml")

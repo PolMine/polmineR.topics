@@ -291,11 +291,10 @@ shinyServer(function(input, output, session) {
   output$ts_table <- DT::renderDataTable({
     input$ts_topic
     input$ts_aggregation
-    zooObject <- as.zoo(
-      get(input$ta_object)$topicmodel,
-      k=as.integer(input$ts_k),
-      select=which(get(input$ta_object)$labels == input$ts_topic),
-      aggregation=input$ts_aggregation
+    zooObject <- get(input$ta_object)$as.zoo(
+      x = which(get(input$ta_object)$labels == input$ts_topic),
+      k = as.integer(input$ts_k),
+      aggregation = input$ts_aggregation
     )
     values$zoo <- zooObject
     as.data.frame(zooObject)

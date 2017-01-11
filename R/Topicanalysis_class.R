@@ -2,6 +2,13 @@
 #' 
 #' Analyse topicmodels.
 #' 
+#' @section Methods:
+#' \describe{
+#' \item{\code{cooccurrences(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE)}}{
+#' Get cooccurrences of topics. Params are documented with the S4 cooccurrences-method for TopicModel-objects.
+#' }
+#' }
+
 #' @examples
 #' \dontrun{
 #' library(polmineR.topics)
@@ -60,8 +67,7 @@ Topicanalysis <- R6Class(
       } else {
         self$labels[n] <- new
       }
-    }
-    ,
+    },
 
     addCategory = function(new){
       stopifnot(is.character(new))
@@ -76,14 +82,39 @@ Topicanalysis <- R6Class(
       self$exclude[n] <- new
     },
 
-    cooccurrences = function(k=3, regex = NULL, docs = NULL, progress = TRUE, exclude = TRUE){
-      cooc <- cooccurrences(self$topicmodel, k=k, regex=regex, docs=docs, progress=progress)
-      cooc[, x_label := self$labels[cooc[["x"]] ] ]
-      cooc[, y_label := self$labels[cooc[["y"]] ] ]
-      if (exclude == TRUE){
-        cooc <- cooc[!cooc$x %in% which(self$exclude == TRUE),]
-        cooc <- cooc[!cooc$y %in% which(self$exclude == TRUE),]
+    cooccurrences = function(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE){
+      if(is.null(renumber)){
+        cooc <- cooccurrences(
+          self$topicmodel, k = k, regex = regex, docs = docs,
+          progress = progress
+          )
+        cooc[, x_label := self$labels[cooc[["x"]] ] ]
+        cooc[, y_label := self$labels[cooc[["y"]] ] ]
+        if (exclude == TRUE){
+          cooc <- cooc[!cooc$x %in% which(self$exclude == TRUE),]
+          cooc <- cooc[!cooc$y %in% which(self$exclude == TRUE),]
+        }
+      } else {
+        stopifnot(is.integer(renumber))
+        cooc <- cooccurrences(
+          self$topicmodel, k = k, regex = regex, docs = docs, renumber = unname(renumber),
+          progress = progress
+          )
+        if (exclude == TRUE){
+          cooc <- cooc[x > 0][y > 0]
+          labelVector <- renumber[which(renumber > 0)]
+          labelVector2 <- sapply(split(labelVector, names(labelVector)), function(x) unique(x))
+          labelVector3 <- sort(labelVector2)
+          labelVector4 <- names(labelVector3)
+          names(labelVector4) <- as.character(labelVector3)
+          if (!is.null(names(renumber))){
+            cooc[, x_label := labelVector4[as.character(cooc[["x"]])]]
+            cooc[, y_label := labelVector4[as.character(cooc[["y"]])]]
+          }
+          
+        }
       }
+      
       cooc
     },
 
@@ -114,10 +145,11 @@ Topicanalysis <- R6Class(
       read(self$topicmodel, as(self$bundle[[x]], self$type), noTopics=n, noToken=100)
     },
 
-    as.zoo = function(x=NULL, y=NULL, k=3, exclude=TRUE, aggregation="year"){
+    as.zoo = function(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation = "year"){
       if (is.null(y)){
-        retval <- as.zoo(self$topicmodel, k=k, aggregation=aggregation)
+        retval <- as.zoo(self$topicmodel, k = k, aggregation = aggregation)
         colnames(retval) <- self$labels[as.integer(colnames(retval))]
+        
         if (!is.null(x)) retval <- retval[,x]
         if (exclude == TRUE){
           retval <- retval[, -which(self$exclude == TRUE)]

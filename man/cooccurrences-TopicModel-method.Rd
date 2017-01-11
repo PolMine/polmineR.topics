@@ -6,12 +6,18 @@
 \title{Calculate cooccurrences for a topicmodel}
 \usage{
 \S4method{cooccurrences}{TopicModel}(.Object, k, regex = NULL, docs = NULL,
-  progress = TRUE, verbose = TRUE)
+  renumber = NULL, progress = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{.Object}{the object}
 
 \item{k}{the k first topics to consider}
+
+\item{regex}{if provided, the procedure will be limited to document names matching the regex (defaults to NULL)}
+
+\item{docs}{if provided, the procedure will be limited to documents matching the character string}
+
+\item{renumber}{if not NULL (the default), an integer vector (length = number of topics) supplying new topic numbers}
 
 \item{verbose}{logical}
 }

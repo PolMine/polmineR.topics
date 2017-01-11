@@ -2,7 +2,7 @@
 setGeneric("as.zoo", function(x, ...) standardGeneric("as.zoo"))
 
 
-#' aggregate topic prevalance according to time
+#' aggregate topic occurrence according to time
 #' 
 #' @param x a LDA object
 #' @param k include topics into aggregation that are among the top k topics
@@ -13,7 +13,9 @@ setGeneric("as.zoo", function(x, ...) standardGeneric("as.zoo"))
 #' @importFrom zoo as.zoo as.yearqtr as.yearmon index 
 #' @rdname as.zoo
 #' @import methods
-setMethod("as.zoo", "LDA", function(x, k=3, regex="^.*?(\\d{4}-\\d{2}-\\d{2}).*?$", select=NULL, aggregation=NULL){
+setMethod("as.zoo", "LDA", function(
+  x, k = 3, regex = "^.*?(\\d{4}-\\d{2}-\\d{2}).*?$", select = NULL, aggregation = NULL
+  ){
   stopifnot(is.null(aggregation) || aggregation %in% c("month", "quarter", "year"))
   # extract date from document names
   dateVector <- as.Date(gsub(regex, "\\1", x@documents), format="%Y-%m-%d")

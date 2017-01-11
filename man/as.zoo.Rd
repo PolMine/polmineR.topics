@@ -4,7 +4,7 @@
 \name{as.zoo}
 \alias{as.zoo}
 \alias{as.zoo,LDA-method}
-\title{aggregate topic prevalance according to time}
+\title{aggregate topic occurrence according to time}
 \usage{
 as.zoo(x, ...)
 
@@ -26,6 +26,6 @@ as.zoo(x, ...)
 \item{aggregation}{either "year", "quarter" or month}
 }
 \description{
-aggregate topic prevalance according to time
+aggregate topic occurrence according to time
 }
 

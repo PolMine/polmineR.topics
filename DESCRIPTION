@@ -1,8 +1,8 @@
 Package: polmineR.topics
 Type: Package
 Title: tools for topicmodelling
-Version: 0.1.7
-Date: 2016-06-08
+Version: 0.1.8
+Date: 2016-12-19
 Author: Andreas Blaette
 Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
 Description: Auxiliary functions for topicmodelling.

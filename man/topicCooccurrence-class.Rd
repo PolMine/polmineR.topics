@@ -3,7 +3,7 @@
 \docType{class}
 \name{topicCooccurrence-class}
 \alias{topicCooccurrence-class}
-\title{topicCooccurence}
+\title{Cooccurence of Topics.}
 \arguments{
 \item{sizeCoi}{size of the coi}
 

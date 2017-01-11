@@ -1,10 +1,38 @@
-#' generate command to run lds topicmodelling from command line
+#' Generate command to run lds topicmodelling from batch.
 #' 
 #' @param method either ctm or lda
 #' @param infile input file
 #' @param outfile output file (full path)
 #' @param k number of topics
 #' @export topicmodelsCmd
+#' @examples
+#' \dontrun{
+#' 
+#' P <- partition("PLPRBT", speaker_type = "speech")
+#' B <- as.speeches(
+#'   P,
+#'   sAttributeDates = "speaker_date", sAttributeNames = "speaker_name", gap = 500,
+#'   mc = TRUE, progress = TRUE
+#' )
+#' docsToKeep <- subset(summary(B), token >= 250)[,"partition"]
+#' B2 <- B[[docsToKeep]]
+#' 
+#' B2 <- enrich(B2, pAttribute = "word", progress = TRUE, mc = TRUE)
+#' dtm <- as.DocumentTermMatrix(B2, pAttribute = "word")
+#' dtmNoise <- noise(dtm, minTotal = 5, minTfIdfMean = NULL, sparse = NULL)
+#' dtm2 <- trim(dtm, termsToDrop = unique(unlist(dtmNoise)))
+#' emptyRows <- which(slam::row_sums(dtm2) == 0)
+#' if (length(emptyRows) > 0) dtm2 <- dtm2[-emptyRows,]
+#' attr(dtm2, "weighting") <- c("term frequency", "tf")
+#' saveRDS(dtm2, file=filenames[[region]]["dtmFile"])
+#' 
+#' }
+polmineR.topics::topicmodelsCmd(
+  infile=filenames[[region]]["dtmFile"],
+  outfile=file.path(projectDir, "data", paste(region, "speaker_lda_250.RData", sep="_")),
+  k=nTopics
+)
+#' }
 topicmodelsCmd <- function(method="lda", infile, outfile, k){
   what <- switch(
     method,
