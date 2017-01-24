@@ -33,6 +33,8 @@ Topicanalysis <- R6Class(
   public=list(
 
     topicmodel = NULL,
+    posterior = NULL,
+    terms = NULL,
     bundle = NULL,
     labels = c(),
     name = c(),
@@ -41,7 +43,7 @@ Topicanalysis <- R6Class(
     exclude = c(),
     type = NULL,
     
-    initialize = function (topicmodel, name = NULL, bundle=NULL, labels=NULL, categories=as.character(c()), exclude=NULL, type=NULL){
+    initialize = function (topicmodel, name = NULL, bundle = NULL, labels = NULL, categories = as.character(c()), exclude = NULL, type = NULL){
       self$topicmodel <- topicmodel
       self$bundle <- bundle
       self$type <- type
@@ -121,12 +123,12 @@ Topicanalysis <- R6Class(
     wordcloud = function(x=1, n=50){
       tokens <- posterior(self$topicmodel)[["terms"]][x, ]
       tokens <- tokens[order(tokens, decreasing=TRUE)][c(1:n)]
-      wordcloud::wordcloud(words=names(tokens), freq=unname(tokens), scale=c(4,.5))
+      wordcloud::wordcloud(words = names(tokens), freq = unname(tokens), scale=c(4,.5))
     }
     ,
 
-    docs = function(x, y=NULL, n=3, sAttributes=NULL){
-      topicDf <- as.data.frame(topics(self$topicmodel, k=n))
+    docs = function(x, y = NULL, n = 3, sAttributes = NULL){
+      topicDf <- as.data.frame(topics(self$topicmodel, k = n))
       if (is.character(x)) x <- which(self$labels == x)
       xPresence <- sapply(topicDf, function(top) any(x %in% top))
       xPresent <- names(xPresence[unname(xPresence)])
@@ -141,8 +143,8 @@ Topicanalysis <- R6Class(
       docs
     },
 
-    read = function(x, n=3, noToken=100){
-      read(self$topicmodel, as(self$bundle[[x]], self$type), noTopics=n, noToken=100)
+    read = function(x, n = 3, noToken = 100){
+      read(self$topicmodel, as(self$bundle[[x]], self$type), noTopics = n, noToken = 100)
     },
 
     as.zoo = function(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation = "year"){
@@ -199,6 +201,32 @@ Topicanalysis <- R6Class(
       message("... calculating cosine similarity")
       similarity <- lsa::cosine(merged)
       similarity
+    },
+    
+    findTopics = function(x, n = 100, word2vec = NULL){
+      if (is.null(self$terms)){
+        self$terms <- terms(self$topicmodel, n)
+      }
+      if (!is.null(word2vec)){
+        vocab <- unlist(lapply(x, function(x) as.vector(word2vec$similarity(x, 50)[,"word"])))
+      } else {
+        vocab <- x
+      }
+      y <- apply(
+        self$terms, 2,
+        function(column) sum(unlist(lapply(vocab, function(t) which(t == rev(column)))))
+      )
+      y <- y[order(y, decreasing = TRUE)]
+      y <- round(y / (length(vocab) * n), 3)
+      df <- data.frame(
+        topic = as.integer(gsub("^.*?\\s+(\\d+)$", "\\1", names(y))),
+        score = unname(y)
+      )
+      df <- subset(df, score > 0)
+      for (i in 1:10){
+        df[[paste("word", i, sep = "_")]] <- self$terms[i, df$topic]
+      }
+      df
     }
 
   )

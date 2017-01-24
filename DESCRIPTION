@@ -9,9 +9,9 @@ Description: Auxiliary functions for topicmodelling.
 Depends:
   methods,
   data.table,
-  R6
+  R6,
+  polmineR
 Imports:
-  polmineR,
   Hmisc,
   topicmodels,
   zoo,
@@ -33,4 +33,6 @@ Collate:
   'dotchart_method.R'
   'shiny_function.R'
   'TopicanalysisBundle_class.R'
+  'SentenceSimilarity.R'
+  'Word2Vec.R'
 RoxygenNote: 5.0.1

@@ -5,17 +5,20 @@
 \alias{as.mallet}
 \alias{as.mallet,partitionBundle-method}
 \alias{malletCmd}
+\alias{malletImport}
 \alias{store}
 \alias{store,jobjRef-method}
-\title{interface to mallet topicmodelling}
+\title{Interface to mallet topicmodelling.}
 \usage{
 as.mallet(.Object, ...)
 
 \S4method{as.mallet}{partitionBundle}(.Object, pAttribute = "word",
   termsToDrop = tm::stopwords("de"), mc = TRUE, verbose = TRUE)
 
-malletCmd(sourcefile, targetDir = "/Users/blaette/Lab/tmp/foo",
+malletCmd(sourcefile, targetDir = "/Users/blaette/Lab/tmp/mallet_result",
   topwords = 50, topics = 50, iterations = 2000, threads = 1)
+
+malletImport(dir = "/Users/blaette/Lab/tmp/mallet_result")
 
 store(object, ...)
 
@@ -42,22 +45,26 @@ store(object, ...)
 }
 \description{
 Turn partitionBundle into a mallet object (instance list). The typical 
-workflow will be as follows (see example): (1) Turn partitionBundle-object
-into mallet instance list; (2a) store the resulting jobjRef-object locally
-using store-method, create mallet command with malletCmd, and run mallet
-from the command line; or (2b) run mallet topic modelling from within R.
+workflow will be as follows (see example):
+(1) Turn partitionBundle-object into mallet instance list;
+(2a) store the resulting jobjRef-object locally using store-method,
+create mallet command with malletCmd, and run mallet from the command line;
+alternativelly:
+(2b) run mallet topic modelling from within R.
 }
 \examples{
 \dontrun{
 use("polmineR.sampleCorpus")
 bt2009 <- partition("PLPRBTTXT", text_year="2009")
-bt2009bundle <- partitionBundle(bt2009, def=list(text_protocol_no=NULL), pAttribute=NULL)
+bt2009bundle <- partitionBundle(bt2009, sAttribute= "text_protocol_no", pAttribute = NULL)
 instanceList <- as.mallet(bt2009bundle)
-fname <- store(instanceList, filename=NULL) # output to a tempfile
-topic.model <- MalletLDA(num.topics=20)
+topic.model <- MalletLDA(num.topics = 20)
 topic.model$loadDocuments(instanceList)
 topic.model$setAlphaOptimization(20, 50)
-topic.model$train(200)
+topic.model$train(2000)
+
+fname <- store(instanceList, filename = NULL) # output to a tempfile
+system(malletCmd(fname))
 }
 }
 

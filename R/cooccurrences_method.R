@@ -5,6 +5,7 @@
 #' @param sizeCoi size of the coi
 #' @param sizeRef size of the ref
 #' @param method method
+#' @import polmineR
 setClass(
   "topicCooccurrence",
   slots = c(

@@ -26,14 +26,13 @@
 #' attr(dtm2, "weighting") <- c("term frequency", "tf")
 #' saveRDS(dtm2, file=filenames[[region]]["dtmFile"])
 #' 
+#' polmineR.topics::topicmodelsCmd(
+#'  infile=filenames[[region]]["dtmFile"],
+#'  outfile=file.path(projectDir, "data", paste(region, "speaker_lda_250.RData", sep="_")),
+#'  k=nTopics
+#'  )
 #' }
-polmineR.topics::topicmodelsCmd(
-  infile=filenames[[region]]["dtmFile"],
-  outfile=file.path(projectDir, "data", paste(region, "speaker_lda_250.RData", sep="_")),
-  k=nTopics
-)
-#' }
-topicmodelsCmd <- function(method="lda", infile, outfile, k){
+topicmodelsCmd <- function(method = "lda", infile, outfile, k){
   what <- switch(
     method,
     ctm = "topicmodels_ctm.R",
@@ -41,11 +40,11 @@ topicmodelsCmd <- function(method="lda", infile, outfile, k){
   )
   cmd <- paste(
     "Rscript",
-    system.file("Rscript", what, package="polmineR.topics"),
+    system.file("Rscript", what, package = "polmineR.topics"),
     "-f", infile,
     "-o", outfile,
     "-k", k,
-    sep=" "
+    sep = " "
   )
   paste(cmd, sep=" ")
 }
