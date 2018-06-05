@@ -1,4 +1,5 @@
 #' @importFrom polmineR dotplot
+#' @importFrom graphics dotchart
 setMethod("dotplot", "LDA", function(.Object, topic, n=50, ...){
   stopifnot(is.numeric(topic))
   ldaPosteriorTerms <- topicmodels::posterior(.Object)[["terms"]][topic,]

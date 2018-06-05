@@ -2,35 +2,59 @@
 #' 
 #' Analyse topicmodels.
 #' 
+#' @field topicmodel A topicmodel of class \code{TopicModel}, generated from package \code{topicmodels}.
+#' @field posterior Slot to store posterior, not used at this point.
+#' @field terms The \code{matrix} with the terms of a topicmodel; stored to .
+#' @field bundle A \code{partitionBundle}, required to use method \code{read} to access full text.
+#' @field labels A character vector, labels for the topics.
+#' @field name A name for the \code{Topicanalysis} object. Useful if combining
+#'   several objects into a bundle.
+#' @field categories A character vector with categories.
+#' @field grouping Not used at this stage.
+#' @field exclude Topics to exclude from further analysis.
+#' @field type Corpus type, necessary for applying correct template for fulltext output.
+#' 
+#' @param new New value for a label or a category.
+#' @param n Number of a topic.
+#' @param n_words An integer, the number of words to be displayed in a wordcloud.
+#' @param x Number or name of a topics.
+#' @param y Number or name of a topic cooccurring with x.
+#' @param k Number of top topics in a document considered.
+#' @param exclude A logical value, whether to to exclude topics earmarked in
+#'   logical vector in field exclude.
+#' @param aggregation Level of aggregation of \code{as.zoo} method.
+#' @param ... Further parameters passed to worker function (\code{wordcloud}, for instance).
+#' 
 #' @section Methods:
 #' \describe{
-#' \item{\code{cooccurrences(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE)}}{
-#' Get cooccurrences of topics. Params are documented with the S4 cooccurrences-method for TopicModel-objects.
+#'   \item{\code{$initialize(topicmodel)}}{Instantiate new \code{Topicanalysis}
+#'   object. Upon initialization, labels will be the plain numbers of the
+#'   topics, all exclude values are \code{FALSE}.}
+#'   \item{\code{$cooccurrences(k = 3, regex = NULL, docs = NULL, renumber = NULL,
+#'   progress = TRUE, exclude = TRUE)}}{ Get cooccurrences of topics. Params are
+#'   documented with the S4 cooccurrences-method for TopicModel-objects. }
+#'   \item{\code{$relabel(n, new)}}{Relabel topic \code{n}, assigning new label \code{new}.}
+#'   \item{\code{$add_category(new)}}{Add a new category.}
+#'   \item{\code{$ignorance(n, new)}}{Exclude topic \code{n} (i.e. add to ignore).}
+#'   \item{\code{$cooccurrence(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE)}}{Get cooccurrences of topics.}
+#'   \item{\code{$wordcloud(x = 1, n = 50, ...)}}{Generate wordcloud for topic \code{x}, with \code{n} words.}
+#'   \item{\code{$docs(x, y = NULL, n = 3, sAttributes = NULL)}}{Get documents where topic \code{x} occurrs among the top \code{n} topics.}
+#'   \item{\code{$read(x, n = 3, noToken = 100)}}{Read stuff.}
+#'   \item{\code{$as.zoo(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation
+#'   = c(NULL, "month", "quarter", "year"))}}{Generate \code{zoo} object from topicmodel.}
+#'   \item{\code{$compare(x, ...)}}{xxx}
+#'   \item{\code{$find_topics(x, n = 100, word2vec = NULL)}}{Find a topic.}
 #' }
-#' }
-
-#' @examples
-#' \dontrun{
-#' library(polmineR.topics)
-#' setwd("/Users/blaette/Lab/repos/arenen/analysis/policy_events_paper")
-#' options(polmineR$meta=c("text_name", "text_party", "text_date")))
-#' speeches <- readRDS("bundle/speeches.RData")
-#' lda <- readRDS("lda/lda_bt_migration.RData")
-#' TA <- Topicanalysis$new(topicmodel=lda, bundle=speeches)
-#' TA$labels # see the result
-#' saveRDS(TA$labels, file="lda_bt_migration_50_labels.RData")
-#' TA$labels <- readRDS("lda_bt_migration_50_labels.RData")
 #' 
-#' TA$as.zoo(period="year")
-#' TA$cooccurring()
-#' }
 #' @export Topicanalysis
 #' @import R6
+#' @importFrom wordcloud wordcloud
+#' @importFrom topicmodels posterior terms
 Topicanalysis <- R6Class(
   
   "Topicanalysis",
   
-  public=list(
+  public = list(
 
     topicmodel = NULL,
     posterior = NULL,
@@ -43,23 +67,12 @@ Topicanalysis <- R6Class(
     exclude = c(),
     type = NULL,
     
-    initialize = function (topicmodel, name = NULL, bundle = NULL, labels = NULL, categories = as.character(c()), exclude = NULL, type = NULL){
+    initialize = function (topicmodel){
       self$topicmodel <- topicmodel
-      self$bundle <- bundle
-      self$type <- type
-      self$name <- name
-      self$categories <- categories
-      if (is.null(labels)){
-        self$labels <- as.character(c(1:topicmodel@k))
-      } else {
-        self$labels <- labels
-      }
-      if (is.null(labels)){
-        self$exclude <- as.logical(rep(FALSE, times=topicmodel@k))  
-      } else {
-        self$exclude <- exclude 
-      }
-      
+      self$labels <- as.character(1:topicmodel@k)
+      self$exclude <- as.logical(rep(FALSE, times = topicmodel@k))
+      self$categories <- character()
+      invisible(self)
     },
     
     relabel = function(n, new){
@@ -71,7 +84,7 @@ Topicanalysis <- R6Class(
       }
     },
 
-    addCategory = function(new){
+    add_category = function(new){
       stopifnot(is.character(new))
       if (new != ""){
         newCategories <- c(new, self$categories)
@@ -116,16 +129,14 @@ Topicanalysis <- R6Class(
           
         }
       }
-      
       cooc
     },
 
-    wordcloud = function(x=1, n=50){
-      tokens <- posterior(self$topicmodel)[["terms"]][x, ]
-      tokens <- tokens[order(tokens, decreasing=TRUE)][c(1:n)]
-      wordcloud::wordcloud(words = names(tokens), freq = unname(tokens), scale=c(4,.5))
-    }
-    ,
+    wordcloud = function(n, n_words = 50, ...){
+      tokens <- posterior(self$topicmodel)[["terms"]][n, ]
+      tokens <- tokens[order(tokens, decreasing = TRUE)][1:n_words]
+      wordcloud::wordcloud(words = names(tokens), freq = unname(tokens), ...)
+    },
 
     docs = function(x, y = NULL, n = 3, sAttributes = NULL){
       topicDf <- as.data.frame(topics(self$topicmodel, k = n))
@@ -147,15 +158,13 @@ Topicanalysis <- R6Class(
       read(self$topicmodel, as(self$bundle[[x]], self$type), noTopics = n, noToken = 100)
     },
 
-    as.zoo = function(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation = "year"){
+    as.zoo = function(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation = c(NULL, "month", "quarter", "year")){
       if (is.null(y)){
         retval <- as.zoo(self$topicmodel, k = k, aggregation = aggregation)
         colnames(retval) <- self$labels[as.integer(colnames(retval))]
         
         if (!is.null(x)) retval <- retval[,x]
-        if (exclude == TRUE){
-          retval <- retval[, -which(self$exclude == TRUE)]
-        }
+        if (exclude) retval <- retval[, -which(self$exclude == TRUE)]
         return(retval)
       } else {
         if (is.character(y)){
@@ -203,7 +212,7 @@ Topicanalysis <- R6Class(
       similarity
     },
     
-    findTopics = function(x, n = 100, word2vec = NULL){
+    find_topics = function(x, n = 100, word2vec = NULL){
       if (is.null(self$terms)){
         self$terms <- terms(self$topicmodel, n)
       }
@@ -223,7 +232,7 @@ Topicanalysis <- R6Class(
         score = unname(y)
       )
       df <- subset(df, score > 0)
-      for (i in 1:10){
+      for (i in 1L:10L){
         df[[paste("word", i, sep = "_")]] <- self$terms[i, df$topic]
       }
       df

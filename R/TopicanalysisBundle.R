@@ -4,9 +4,6 @@
 #' @importFrom lsa cosine
 #' @import data.table
 #' @field foo something
-#' @examples 
-#' \dontrun{
-#' }
 #' @export TopicanalysisBundle
 TopicanalysisBundle <- R6Class(
   

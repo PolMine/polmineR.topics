@@ -9,7 +9,7 @@
 Word2Vec
 }
 \description{
-Use word2vec.
+http://dsnotes.com/articles/glove-enwiki
 }
 \examples{
 \dontrun{
@@ -18,4 +18,3 @@ W2V <- Word2Vec$new()
 }
 }
 \keyword{datasets}
-

@@ -16,6 +16,7 @@ Get similar sentences.
 \describe{
 \item{\code{partition}}{a partition}
 }}
+
 \section{Methods}{
 
 \describe{
@@ -26,6 +27,7 @@ Get similar sentences.
 \item{code{}}{}
 }
 }
+
 \examples{
 \dontrun{
 library(R6)
@@ -52,4 +54,3 @@ S$getSentenceSimilarity(sentence)
 }
 }
 \keyword{datasets}
-

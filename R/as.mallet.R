@@ -18,6 +18,9 @@
 #' @param object the rJava-object
 #' @param filename where to store the Java-object
 #' @exportMethod as.mallet
+#' @importFrom utils read.csv read.table
+#' @importFrom stats setNames
+#' @importFrom slam simple_triplet_matrix
 #' @examples 
 #' \dontrun{
 #' use("polmineR.sampleCorpus")
