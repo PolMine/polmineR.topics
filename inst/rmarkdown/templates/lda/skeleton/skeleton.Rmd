@@ -1,0 +1,106 @@
+---
+title: "Create LDA Topic Model"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Create LDA Topic Model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+params:
+  package: "polmineR"
+  corpus: "GERMAPARLMINI"
+  no_cores: 250
+---
+
+# Das Skript soll von dem Verzeichnis aus aufgerufen werden,
+# in welches die Ergebnisse geschrieben werden.
+# Aufruf zum Beispiel mit:
+# Rscript topicmodelling.R --args ParlSpeech BUNDESTAG 250 en
+
+````{r}
+args <- commandArgs(trailingOnly = TRUE)
+package_to_use <- args[2]
+corpus <- toupper(args[3])
+k <- as.integer(args[4])
+language <- args[5]
+```
+
+```{r}
+message(sprintf("Package to use: %s", package_to_use))
+message(sprintf("Corpus to use: %s", corpus))
+message(sprintf("Number of topics (k): %s", k))
+
+lda_filename <- sprintf("./lda_%s_%s.Rdata", corpus, k)
+message("LDA model will be written to: ", lda_filename)
+```
+
+
+# Load libraries
+
+```{r}
+library(polmineR)
+library(data.table)
+library(pbapply)
+library(topicmodels)
+```
+
+# Activate Corpus Package
+
+```{r}
+use(package_to_use)
+```
+
+# Get going
+
+```{r}
+speeches <- as.speeches(.Object = corpus, sAttributeDates = "date", sAttributeNames = "name")
+count_bundle <- count(speeches, pAttribute = "word", verbose = TRUE)
+rm(speeches)
+```
+
+```{r}
+message("... create DocumentTermMatrix")
+
+# Create DocumentTermMatrix
+dtm <- as.DocumentTermMatrix(count_bundle, pAttribute = "word", col = "count")
+```
+
+```{r}
+# minimum document length 100 words
+docs_to_drop_length <- which(slam::row_sums(dtm) < 100) # less than 100
+if (length(docs_to_drop_length) > 0) dtm <- dtm[-docs_to_drop_length,]
+
+# remove noisy words
+noise_to_drop <- noise(colnames(dtm), specialChars = NULL, stopwordsLanguage = language)
+noise_to_drop[["stopwords"]] <- c(
+  noise_to_drop[["stopwords"]],
+  paste(
+    toupper(substr(noise_to_drop[["stopwords"]], 1, 1)),
+    substr(noise_to_drop[["stopwords"]], 2, nchar(noise_to_drop[["stopwords"]])),
+    sep = ""
+  )
+)
+
+dtm <- dtm[,-which(unique(unlist(noise_to_drop)) %in% colnames(dtm))]
+
+# remove rare words
+terms_to_drop_rare <- which(slam::col_sums(dtm) <= 10)
+if (length(terms_to_drop_rare) > 0) dtm <- dtm[,-terms_to_drop_rare]
+
+# remove documents that are empty now
+empty_docs <- which(slam::row_sums(dtm) == 0)
+if (length(empty_docs) > 0) dtm <- dtm[-empty_docs,]
+```
+
+```{r}
+lda <- LDA(
+  dtm, k = k, method = "Gibbs",
+  control = list(burnin = 1000, iter = 3L, keep = 50, verbose = TRUE)
+)
+```
+
+```{r}
+saveRDS(object = lda, file = lda_filename)
+```
+
+
