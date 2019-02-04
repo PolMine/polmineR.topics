@@ -39,6 +39,7 @@ ldaBundle <- function(dtm, ks, method="Gibbs", burnin=1000, iter=1000, keep=50, 
 
 #' @exportMethod mean
 #' @importFrom Rmpfr mpfr
+#' @importFrom stats median
 #' @rdname ldaBundle
 setMethod("mean", "ldaBundle", function(x){
   .harmonicMean <- function(logLikelihoods, precision = 2000L) {

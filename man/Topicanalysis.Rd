@@ -8,26 +8,6 @@
 \usage{
 Topicanalysis
 }
-\arguments{
-\item{new}{New value for a label or a category.}
-
-\item{n}{Number of a topic.}
-
-\item{n_words}{An integer, the number of words to be displayed in a wordcloud.}
-
-\item{x}{Number or name of a topics.}
-
-\item{y}{Number or name of a topic cooccurring with x.}
-
-\item{k}{Number of top topics in a document considered.}
-
-\item{exclude}{A logical value, whether to to exclude topics earmarked in
-logical vector in field exclude.}
-
-\item{aggregation}{Level of aggregation of \code{as.zoo} method.}
-
-\item{...}{Further parameters passed to worker function (\code{wordcloud}, for instance).}
-}
 \description{
 Analyse topicmodels.
 }
@@ -55,6 +35,21 @@ several objects into a bundle.}
 
 \item{\code{type}}{Corpus type, necessary for applying correct template for fulltext output.}
 }}
+
+\section{Arguments}{
+
+\describe{
+  \item{new}{New value for a label or a category.}
+  \item{n}{Number of a topic.}
+  \item{n_words}{An integer, the number of words to be displayed in a wordcloud.}
+  \item{x}{Number or name of a topics.}
+  \item{y}{Number or name of a topic cooccurring with x.}
+  \item{k}{Number of top topics in a document considered.}
+  \item{exclude}{A logical value, whether to to exclude topics earmarked in logical vector in field exclude.}
+  \item{aggregation}{Level of aggregation of \code{as.zoo} method.}
+  \item{...}{Further parameters passed to worker function (\code{wordcloud}, for instance).}
+}
+}
 
 \section{Methods}{
 

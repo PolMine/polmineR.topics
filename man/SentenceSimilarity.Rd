@@ -17,17 +17,6 @@ Get similar sentences.
 \item{\code{partition}}{a partition}
 }}
 
-\section{Methods}{
-
-\describe{
-\item{
-   code{getSentenceVectors(method = c("pos", "openNLP"), f = mean, stopwords = tm::stopwords("de"), tfidf = FALSE, verbose = TRUE)}
-   {}
-   }
-\item{code{}}{}
-}
-}
-
 \examples{
 \dontrun{
 library(R6)

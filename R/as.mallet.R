@@ -38,28 +38,24 @@
 #' @rdname mallet
 setGeneric("as.mallet", function(.Object, ...) standardGeneric("as.mallet"))
 
-#' @param termsToDrop typically, a list of stopwords
 #' @rdname mallet
 #' @importFrom polmineR getTokenStream
-setMethod("as.mallet", "partitionBundle", function(.Object, pAttribute = "word", termsToDrop = tm::stopwords("de"), mc = TRUE, verbose = TRUE){
-  options(java.parameters = "-Xmx8g")
-  if (require("mallet", quietly=TRUE)){
-    if (verbose == TRUE) message("... mallet-package loaded")
-  } else {
-    warning("mallet package not available")
-    stop()
+setMethod("as.mallet", "partition_bundle", function(.Object, pAttribute = "word", termsToDrop = tm::stopwords("de"), mc = TRUE, verbose = TRUE){
+  if (!requireNamespace(package = "rJava", quietly = TRUE)){
+    stop("rJava package not available")
   }
-  if (mc == FALSE){
+  
+  if (!mc){
     if (verbose == TRUE) message("... reconstructing token stream (mc=FALSE)")
     tokenStream <- lapply(
       .Object@objects,
-      function(x) getTokenStream(x, pAttribute = pAttribute, collapse = "\n")
+      function(x) get_token_stream(x, p_attribute = pAttribute, collapse = "\n")
       )
-  } else if (mc == TRUE){
-    if (verbose == TRUE) message("... reconstructing token stream (mc = TRUE)")
+  } else if (mc){
+    if (verbose) message("... reconstructing token stream (mc = TRUE)")
     tokenStream <- mclapply(
       .Object@objects,
-      function(x) getTokenStream(x, pAttribute = pAttribute, collapse = "\n")
+      function(x) get_token_stream(x, p_attribute = pAttribute, collapse = "\n")
       )
   }
   tokenStreamVector <- unlist(tokenStream)
@@ -68,7 +64,7 @@ setMethod("as.mallet", "partitionBundle", function(.Object, pAttribute = "word",
   stoplistFile <- file.path(tmpDir, "stoplists.txt")
   cat(paste(termsToDrop, collapse = "\n"), file = stoplistFile)
   
-  if (verbose == TRUE) message("... make mallet object")
+  if (verbose) message("... make mallet object")
   malletObject <- mallet::mallet.import(
     id.array = names(.Object), text.array = tokenStreamVector,
     stoplist.file = stoplistFile, preserve.case = TRUE
@@ -76,6 +72,13 @@ setMethod("as.mallet", "partitionBundle", function(.Object, pAttribute = "word",
   return(malletObject)
 })
 
+#' @param sourcefile ...
+#' @param targetDir ...
+#' @param topwords ...
+#' @param topics ...
+#' @param iterations ...
+#' @param threads ...
+#' @param dir ...
 #' @export malletCmd
 #' @rdname mallet
 malletCmd <- function(sourcefile, targetDir = "/Users/blaette/Lab/tmp/mallet_result", topwords = 50, topics = 50, iterations = 2000, threads = 1){
@@ -87,7 +90,7 @@ malletCmd <- function(sourcefile, targetDir = "/Users/blaette/Lab/tmp/mallet_res
   )
   
   # check whether targetDir exists
-  if (file.exists(targetDir) == FALSE){
+  if (!file.exists(targetDir)){
     dir.create(targetDir)
     message("... creating targetDir")
   } else {
@@ -145,7 +148,7 @@ malletImport <- function(dir = "/Users/blaette/Lab/tmp/mallet_result"){
   wordsUnique <- unique(wordWeightsRaw[,2])
   wordIndex <- setNames(1:length(wordsUnique), wordsUnique)
   wordWeightsRaw[,2] <- wordIndex[wordWeightsRaw[,2]]
-  wordWeightsRaw <- subset(wordWeightsRaw, V3 > min(wordWeightsRaw[,3]))
+  wordWeightsRaw <- subset(wordWeightsRaw, wordWeightsRaw[["V3"]] > min(wordWeightsRaw[,3]))
   wordWeightsSlam <- simple_triplet_matrix(
     i = wordWeightsRaw[,2],
     j = wordWeightsRaw[,1] + 1,
@@ -184,3 +187,23 @@ malletImport <- function(dir = "/Users/blaette/Lab/tmp/mallet_result"){
   retval
   
 }
+
+
+#' @exportMethod store
+#' @rdname mallet
+setGeneric("store", function(object, ...) standardGeneric("store"))
+
+setOldClass(Classes = "jobjRef")
+
+#' @rdname mallet
+setMethod("store", "jobjRef", function(object, filename = tempfile()){
+  if (!requireNamespace(package = "rJava", quietly = TRUE)){
+    stop("rJava package not available")
+  }
+  fileOutputStream <- new(rJava::J("java/io/FileOutputStream"), filename)
+  objectStream <- new(rJava::J("java/io/ObjectOutputStream"), fileOutputStream)
+  objectStream$writeObject(object)
+  objectStream$close()
+  filename
+})
+

@@ -1,21 +1,21 @@
-Package: polmineR.topics
+Package: topicanalysis
 Type: Package
 Title: tools for topicmodelling
-Version: 0.1.10
-Date: 2018-08-30
+Version: 0.1.11
+Date: 2019-02-04
 Author: Andreas Blaette
 Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
 Description: Auxiliary functions for topicmodelling.
+Encoding: UTF-8
 Depends:
   methods,
-  data.table,
   R6,
   polmineR
 Imports:
+  data.table,
   Hmisc,
   topicmodels,
   zoo,
-  rJava,
   Rmpfr,
   lsa,
   reshape2,
@@ -23,8 +23,10 @@ Imports:
   xml2,
   slam,
   shiny
+Suggests:
+  rJava
 LazyData: NA
-License: NA
+License: GPL-3
 Collate:
   'read.R'
   'Topicanalysis.R'
@@ -32,13 +34,10 @@ Collate:
   'ldaBundle.R'
   'as.zoo.R'
   'cooccurrences.R'
-  'topicmodelsCmd.R'
   'as.mallet.R'
-  'store.R'
-  'rustyard.R'
   'dotchart.R'
   'shiny.R'
   'TopicanalysisBundle.R'
   'SentenceSimilarity.R'
   'Word2Vec.R'
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

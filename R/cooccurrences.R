@@ -5,6 +5,7 @@
 #' @param sizeCoi size of the coi
 #' @param sizeRef size of the ref
 #' @param method method
+#' @param progress logical
 #' @import polmineR
 setClass(
   "topicCooccurrence",
@@ -24,6 +25,7 @@ setClass(
 #' @param docs if provided, the procedure will be limited to documents matching the character string
 #' @param renumber if not NULL (the default), an integer vector (length = number of topics) supplying new topic numbers
 #' @param verbose logical
+#' @param progress logical
 #' @examples
 #' \dontrun{
 #' setwd("/Users/blaette/Lab/repos/arenen/analysis/corpusConsolidation/BT")
@@ -45,12 +47,15 @@ setMethod(
     if (!is.null(renumber)) topicMatrix <- t(apply(topicMatrix, 1, function(x) renumber[x]))
     if (verbose) message("... generating permutations")
     tabs <- lapply(
-      c(1:ncol(topicMatrix)),
-      function(i, ...){x <- topicMatrix[,i]; t(combn(x[order(x)], m = 2))}
+      1L:ncol(topicMatrix),
+      function(i, ...){
+        x <- topicMatrix[,i]
+        t(combn(x[order(x)], m = 2))
+      }
     )
     tab <- do.call(rbind, tabs)
     DT <- data.table(tab)
-    DT2 <- DT[,.N, by=.(V1, V2)] # count cooccurrences
+    DT2 <- DT[,.N, by = c("V1", "V2")] # count cooccurrences
     
     # generate the same table, with V1 and V2 twisted
     DTrev <- copy(DT2)
@@ -58,12 +63,12 @@ setMethod(
     setnames(DTrev, old = c("V2", "V1"), new = c("V1", "V2"))
     DT2 <- rbindlist(list(DT2, DTrev))
     
-    setnames(DT2, old=c("V1", "V2", "N"), new=c("x", "y", "y_count_coi"))
+    setnames(DT2, old = c("V1", "V2", "N"), new = c("x", "y", "y_count_coi"))
     # counting total number of topic occurrence
     vect <- unlist(topicMatrix)
     topicCount <- data.table(table(vect))
     setnames(topicCount, old = c("vect", "N"), new = c("x", "x_count"))
-    topicCount[,x := as.integer(topicCount[["x"]])] # coerce to integer
+    topicCount[, "x" := as.integer(topicCount[["x"]])] # coerce to integer
     # feed total topic counts back into data.table
     setkeyv(topicCount, cols = "x")
     setkeyv(DT2, cols = "x")
@@ -73,20 +78,20 @@ setMethod(
     setkeyv(DT3, cols = "y")
     DT4 <- topicCount[DT3]
     
-    DT4[, y_count_ref := y_count - y_count_coi]
-    DT4[, y_count := NULL]
-    setnames(DT4, old=c("y_count_coi", "y_count_ref"), new=c("count_coi", "count_ref"))
+    DT4[, "y_count_ref" := DT4[["y_count"]] - DT4[["y_count_coi"]] ]
+    DT4[, "y_count" := NULL]
+    setnames(DT4, old = c("y_count_coi", "y_count_ref"), new = c("count_coi", "count_ref"))
     # setcolorder(DT4, c("x", "x_count", "y", "y_count_coi", "y_count_ref"))
     
     .cooc <- function(X){
       obj <- new(
         "topicCooccurrence",
-        sizeCoi=as.integer(k * X[["x_count"]][1] - X[["x_count"]][1]),
-        sizeRef=as.integer(length(vect) - k * X[["x_count"]][1]),
+        sizeCoi = as.integer(k * X[["x_count"]][1] - X[["x_count"]][1]),
+        sizeRef = as.integer(length(vect) - k * X[["x_count"]][1]),
         stat=copy(X)
       )
       chisquare(obj)@stat
     }
-    DT5 <- DT4[, .cooc(.SD), by=.(x)]
+    DT5 <- DT4[, .cooc(.SD), by = c("x")]
     DT5
   })

@@ -4,11 +4,8 @@
 #' 
 #' @section Methods:
 #' \describe{
-#' \item{
-#'    code{getSentenceVectors(method = c("pos", "openNLP"), f = mean, stopwords = tm::stopwords("de"), tfidf = FALSE, verbose = TRUE)}
-#'    {}
-#'    }
-#' \item{code{}}{}
+#'   \item{\code{getSentenceVectors(method = c("pos", "openNLP"), f = mean, stopwords = tm::stopwords("de"), tfidf = FALSE, verbose = TRUE)}{}
+#'   \item{\code{}}{}
 #' }
 #' 
 #' @examples

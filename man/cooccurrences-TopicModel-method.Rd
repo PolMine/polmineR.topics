@@ -5,8 +5,8 @@
 \alias{cooccurrences,TopicModel-method}
 \title{Calculate cooccurrences for a topicmodel}
 \usage{
-\S4method{cooccurrences}{TopicModel}(.Object, k, regex = NULL, docs = NULL,
-  renumber = NULL, progress = TRUE, verbose = TRUE)
+\S4method{cooccurrences}{TopicModel}(.Object, k, regex = NULL,
+  docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE)
 }
 \arguments{
 \item{.Object}{the object}
@@ -18,6 +18,8 @@
 \item{docs}{if provided, the procedure will be limited to documents matching the character string}
 
 \item{renumber}{if not NULL (the default), an integer vector (length = number of topics) supplying new topic numbers}
+
+\item{progress}{logical}
 
 \item{verbose}{logical}
 }

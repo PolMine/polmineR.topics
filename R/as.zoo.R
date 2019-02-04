@@ -29,7 +29,7 @@ setMethod("as.zoo", "LDA", function(
       topic = unlist(lapply(tabled, names)),
       count = unlist(lapply(tabled, unname))
     )
-    DT <- dcast.data.table(DTextensive, date~topic, fun.aggregate=sum, value.var="count")
+    DT <- dcast.data.table(DTextensive, date~topic, fun.aggregate = sum, value.var = "count")
     setcolorder(DT, c("date", as.character(sort(as.integer(colnames(DT)[2:ncol(DT)])))))
     if (length(select) == 1) DT <- DT[,c("date", as.character(select)), with = FALSE]
   } else {
@@ -43,12 +43,12 @@ setMethod("as.zoo", "LDA", function(
       do.call(rbind, topicCombinations)
       )
     setnames(DTcomb, old = c("V1", "V2"), new = c("topic1", "topic2"))
-    DTcomb <- subset(DTcomb, topic1 %in% select & topic2 %in% select)
-    DTcomb[["dummy"]] <- rep(1L, times = nrow(DTcomp))
-    DTcount <- DTcomb[, sum(dummy), by = c("date", "topic1", "topic2"), with = TRUE]
+    DTcomb <- subset(DTcomb, DTcomb[["topic1"]] %in% select & DTcomb[["topic2"]] %in% select)
+    DTcomb[["dummy"]] <- rep(1L, times = nrow(DTcomb))
+    DTcount <- DTcomb[, sum(DTcomb[["dummy"]]), by = c("date", "topic1", "topic2"), with = TRUE]
     setnames(DTcount, old = "V1", new = "count")
     DTcount[, key := paste(DTcount[["topic1"]], DTcount[["topic2"]], sep="-")]
-    DT <- dcast.data.table(DTcount, date~key, fun = sum, value.var = "count")
+    DT <- dcast.data.table(DTcount, date ~ key, fun.aggregate = sum, value.var = "count")
   }
   xtsObject <- as.xts.data.table(DT)
   zooObject <- as.zoo(xtsObject)

@@ -10,6 +10,8 @@
 \item{sizeRef}{size of the ref}
 
 \item{method}{method}
+
+\item{progress}{logical}
 }
 \description{
 Class required to perform the calculation of the chisquare test.

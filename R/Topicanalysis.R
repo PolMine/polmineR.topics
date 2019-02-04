@@ -14,16 +14,18 @@
 #' @field exclude Topics to exclude from further analysis.
 #' @field type Corpus type, necessary for applying correct template for fulltext output.
 #' 
-#' @param new New value for a label or a category.
-#' @param n Number of a topic.
-#' @param n_words An integer, the number of words to be displayed in a wordcloud.
-#' @param x Number or name of a topics.
-#' @param y Number or name of a topic cooccurring with x.
-#' @param k Number of top topics in a document considered.
-#' @param exclude A logical value, whether to to exclude topics earmarked in
-#'   logical vector in field exclude.
-#' @param aggregation Level of aggregation of \code{as.zoo} method.
-#' @param ... Further parameters passed to worker function (\code{wordcloud}, for instance).
+#' @section Arguments:
+#' \describe{
+#'   \item{new}{New value for a label or a category.}
+#'   \item{n}{Number of a topic.}
+#'   \item{n_words}{An integer, the number of words to be displayed in a wordcloud.}
+#'   \item{x}{Number or name of a topics.}
+#'   \item{y}{Number or name of a topic cooccurring with x.}
+#'   \item{k}{Number of top topics in a document considered.}
+#'   \item{exclude}{A logical value, whether to to exclude topics earmarked in logical vector in field exclude.}
+#'   \item{aggregation}{Level of aggregation of \code{as.zoo} method.}
+#'   \item{...}{Further parameters passed to worker function (\code{wordcloud}, for instance).}
+#' }
 #' 
 #' @section Methods:
 #' \describe{
@@ -194,7 +196,7 @@ Topicanalysis <- R6Class(
           rownames(m) <- TA_list[[taName]]$labels
           m <- m[which(TA_list[[taName]]$exclude == FALSE), ]
           rownames(m) <- paste(taName, rownames(m), sep="::")
-          mExt <- melt(m)
+          mExt <- reshape2::melt(m)
           colnames(mExt) <- c("label", "feature", "value")
           data.table(mExt)
         }
