@@ -44,10 +44,34 @@
 #'   \item{\code{$read(x, n = 3, noToken = 100)}}{Read stuff.}
 #'   \item{\code{$as.zoo(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation
 #'   = c(NULL, "month", "quarter", "year"))}}{Generate \code{zoo} object from topicmodel.}
-#'   \item{\code{$compare(x, ...)}}{xxx}
+#'   \item{\code{$compare(x, ...)}}{Compare the similarity of two topicmodels.}
 #'   \item{\code{$find_topics(x, n = 100, word2vec = NULL)}}{Find a topic.}
 #' }
+#' @examples
+#' \dontrun{
+#' data(BE_lda)
+#' data(BE_labels)
+#' data(BE_exclude)
 #' 
+#' data(SL_lda)
+#' data(SL_labels)
+#' data(SL_exclude)
+#' 
+#' BE <- Topicanalysis$new(topicmodel = BE_lda)
+#' BE$labels <- BE_labels
+#' BE$exclude <- BE_exclude
+#' BE$exclude <- grepl("^\\((split|)\\)$", BE$labels)
+#' BE$name <- "Berlin"
+#' 
+#' SL <- Topicanalysis$new(topicmodel = SL_lda)
+#' SL$labels <- SL_labels
+#' SL$exclude <- SL_exclude
+#' SL$exclude <- grepl("^\\((split|)\\)$", SL$labels)
+#' SL$name <- "Hamburg"
+#' 
+#' cp_1 <- BE$compare(SL, BE)
+#' cp_2 <- BE$compare(SL, BE)
+#' }
 #' @export Topicanalysis
 #' @import R6
 #' @importFrom wordcloud wordcloud
@@ -184,27 +208,28 @@ Topicanalysis <- R6Class(
       }
     },
 
-    compare = function(x, ...){
+    compare = function(...){
       # missing here: check that names exist and are unique
-      TA_list <- list(x, ...)
-      names(TA_list) <- sapply(TA_list, function(x) x$name)
+      ta_list <- list(self, ...)
+      names(ta_list) <- sapply(ta_list, function(x) x$name)
       DTs <- lapply(
-        names(TA_list),
-        function(taName){
-          message("... generating DT for ", taName)
-          m <- topicmodels::posterior(TA_list[[taName]]$topicmodel)[["terms"]]
-          rownames(m) <- TA_list[[taName]]$labels
-          m <- m[which(TA_list[[taName]]$exclude == FALSE), ]
-          rownames(m) <- paste(taName, rownames(m), sep="::")
-          mExt <- reshape2::melt(m)
-          colnames(mExt) <- c("label", "feature", "value")
-          data.table(mExt)
+        names(ta_list),
+        function(ta_name){
+          message("... generating DT for ", ta_name)
+          m <- topicmodels::posterior(ta_list[[ta_name]]$topicmodel)[["terms"]]
+          rownames(m) <- paste(ta_name, ta_list[[ta_name]]$labels, sep = "::")
+          m <- m[which(ta_list[[ta_name]]$exclude == FALSE), ]
+          dt <- data.table(m)
+          dt[, "label" := rownames(m)]
+          y <- melt.data.table(data = dt, id.vars = "label")
+          setnames(y, old = "variable", new = "feature")
+          y
         }
       )
       message("... creating aggregated DT")
       DT <- rbindlist(DTs)
       message("... crosstabulation")
-      DT_crosstab <- dcast.data.table(DT, feature~label, fun.aggregate = sum)
+      DT_crosstab <- dcast.data.table(DT, feature ~ label, fun.aggregate = sum)
       features <- as.vector(DT_crosstab[["feature"]])
       DT_crosstab[, feature := NULL]
       merged <- as.matrix(DT_crosstab)

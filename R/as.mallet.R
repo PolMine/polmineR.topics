@@ -2,20 +2,17 @@
 #' 
 #' Turn partitionBundle into a mallet object (instance list). The typical 
 #' workflow will be as follows (see example):
-#' (1) Turn partitionBundle-object into mallet instance list;
-#' (2a) store the resulting jobjRef-object locally using store-method,
-#' create mallet command with malletCmd, and run mallet from the command line;
-#' alternativelly:
-#' (2b) run mallet topic modelling from within R.
+#' (1) Turn partitionBundle-object into mallet instance list, (2a) store the
+#' resulting jobjRef-object locally using store-method, create mallet command
+#' with malletCmd, and run mallet from the command line; alternativelly (2b) run
+#' mallet topic modelling from within R.
 #' 
-#' 
-#' @param .Object partition- or partitionBundle-object
+#' @param .Object \code{partition}, \code{partition_bundle}, or \code{rJava} object
 #' @param termsToDrop stopwords
 #' @param ... further parameters
 #' @param pAttribute the pAttribute to use, typically "word" or "lemma"
 #' @param mc whether to use multicore
 #' @param verbose logical, whether to be verbose
-#' @param object the rJava-object
 #' @param filename where to store the Java-object
 #' @exportMethod as.mallet
 #' @importFrom utils read.csv read.table
@@ -189,20 +186,17 @@ malletImport <- function(dir = "/Users/blaette/Lab/tmp/mallet_result"){
 }
 
 
-#' @exportMethod store
-#' @rdname mallet
-setGeneric("store", function(object, ...) standardGeneric("store"))
-
 setOldClass(Classes = "jobjRef")
 
 #' @rdname mallet
-setMethod("store", "jobjRef", function(object, filename = tempfile()){
+#' @importMethodsFrom polmineR store
+setMethod("store", "jobjRef", function(.Object, filename = tempfile()){
   if (!requireNamespace(package = "rJava", quietly = TRUE)){
     stop("rJava package not available")
   }
   fileOutputStream <- new(rJava::J("java/io/FileOutputStream"), filename)
   objectStream <- new(rJava::J("java/io/ObjectOutputStream"), fileOutputStream)
-  objectStream$writeObject(object)
+  objectStream$writeObject(.Object)
   objectStream$close()
   filename
 })

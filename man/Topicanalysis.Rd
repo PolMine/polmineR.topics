@@ -69,9 +69,35 @@ several objects into a bundle.}
   \item{\code{$read(x, n = 3, noToken = 100)}}{Read stuff.}
   \item{\code{$as.zoo(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation
   = c(NULL, "month", "quarter", "year"))}}{Generate \code{zoo} object from topicmodel.}
-  \item{\code{$compare(x, ...)}}{xxx}
+  \item{\code{$compare(x, ...)}}{Compare the similarity of two topicmodels.}
   \item{\code{$find_topics(x, n = 100, word2vec = NULL)}}{Find a topic.}
 }
 }
 
+\examples{
+\dontrun{
+data(BE_lda)
+data(BE_labels)
+data(BE_exclude)
+
+data(SL_lda)
+data(SL_labels)
+data(SL_exclude)
+
+BE <- Topicanalysis$new(topicmodel = BE_lda)
+BE$labels <- BE_labels
+BE$exclude <- BE_exclude
+BE$exclude <- grepl("^\\\\((split|)\\\\)$", BE$labels)
+BE$name <- "Berlin"
+
+SL <- Topicanalysis$new(topicmodel = SL_lda)
+SL$labels <- SL_labels
+SL$exclude <- SL_exclude
+SL$exclude <- grepl("^\\\\((split|)\\\\)$", SL$labels)
+SL$name <- "Hamburg"
+
+cp_1 <- BE$compare(SL, BE)
+cp_2 <- BE$compare(SL, BE)
+}
+}
 \keyword{datasets}

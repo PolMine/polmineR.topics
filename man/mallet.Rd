@@ -6,7 +6,6 @@
 \alias{as.mallet,partition_bundle-method}
 \alias{malletCmd}
 \alias{malletImport}
-\alias{store}
 \alias{store,jobjRef-method}
 \title{Interface to mallet topicmodelling.}
 \usage{
@@ -20,12 +19,10 @@ malletCmd(sourcefile, targetDir = "/Users/blaette/Lab/tmp/mallet_result",
 
 malletImport(dir = "/Users/blaette/Lab/tmp/mallet_result")
 
-store(object, ...)
-
-\S4method{store}{jobjRef}(object, filename = tempfile())
+\S4method{store}{jobjRef}(.Object, filename = tempfile())
 }
 \arguments{
-\item{.Object}{partition- or partitionBundle-object}
+\item{.Object}{\code{partition}, \code{partition_bundle}, or \code{rJava} object}
 
 \item{...}{further parameters}
 
@@ -51,18 +48,15 @@ store(object, ...)
 
 \item{dir}{...}
 
-\item{object}{the rJava-object}
-
 \item{filename}{where to store the Java-object}
 }
 \description{
 Turn partitionBundle into a mallet object (instance list). The typical 
 workflow will be as follows (see example):
-(1) Turn partitionBundle-object into mallet instance list;
-(2a) store the resulting jobjRef-object locally using store-method,
-create mallet command with malletCmd, and run mallet from the command line;
-alternativelly:
-(2b) run mallet topic modelling from within R.
+(1) Turn partitionBundle-object into mallet instance list, (2a) store the
+resulting jobjRef-object locally using store-method, create mallet command
+with malletCmd, and run mallet from the command line; alternativelly (2b) run
+mallet topic modelling from within R.
 }
 \examples{
 \dontrun{

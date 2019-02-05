@@ -8,6 +8,7 @@ Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
 Description: Auxiliary functions for topicmodelling.
 Encoding: UTF-8
 Depends:
+  R (>= 2.10),
   methods,
   R6,
   polmineR
@@ -18,14 +19,13 @@ Imports:
   zoo,
   Rmpfr,
   lsa,
-  reshape2,
   wordcloud,
   xml2,
   slam,
   shiny
 Suggests:
   rJava
-LazyData: NA
+LazyData: false
 License: GPL-3
 Collate:
   'read.R'
@@ -40,4 +40,5 @@ Collate:
   'TopicanalysisBundle.R'
   'SentenceSimilarity.R'
   'Word2Vec.R'
+  'data.R'
 RoxygenNote: 6.1.1

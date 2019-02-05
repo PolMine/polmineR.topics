@@ -1,6 +1,5 @@
 #' TopicanalysisBundle
 #' 
-#' @importFrom reshape2 melt
 #' @importFrom lsa cosine
 #' @import data.table
 #' @field foo something
@@ -119,14 +118,15 @@ TopicanalysisBundle <- R6Class(
         DTs <- lapply(
           names(self$topicmodels),
           function(id){
-            if (verbose) message("... generating DT for ", id)
-            M <- topicmodels::posterior(self$topicmodels[[id]]$topicmodel)[["terms"]]
-            rownames(M) <- self$topicmodels[[id]]$labels
-            M <- M[which(self$topicmodels[[id]]$exclude == FALSE), ]
-            rownames(M) <- paste(id, rownames(M), sep="::")
-            M2 <- reshape2::melt(M)
-            colnames(M2) <- c("label", "feature", "value")
-            data.table(M2)
+            if (verbose) message("... generating DT for ", ta_name)
+            m <- topicmodels::posterior(ta_list[[ta_name]]$topicmodel)[["terms"]]
+            rownames(m) <- paste(ta_name, ta_list[[ta_name]]$labels, sep = "::")
+            m <- m[which(ta_list[[ta_name]]$exclude == FALSE), ]
+            dt <- data.table(m)
+            dt[, "label" := rownames(m)]
+            y <- melt.data.table(data = dt, id.vars = "label")
+            setnames(y, old = "variable", new = "feature")
+            y
           }
         )
         if (verbose) message("... creating aggregated DT")
@@ -144,7 +144,7 @@ TopicanalysisBundle <- R6Class(
         
         if (verbose) message("... generate index and overall information")
         info <- blapply(
-          c(1:length(self$filenames)),
+          1L:length(self$filenames),
           function(i, filenames, ...){
             M <- readRDS(filenames[[i]])
             list(terms=M@terms, k=M@k)
@@ -173,7 +173,7 @@ TopicanalysisBundle <- R6Class(
             rm(topicmodel)
             if (progress) pb <- txtProgressBar(max = ncol(termTopicMatrix), style=3, width = getOption("width") - 10)
             dfList <- lapply(
-              c(1:ncol(termTopicMatrix)),
+              1L:ncol(termTopicMatrix),
               function(i){
                 if (progress) setTxtProgressBar(pb, value = i)
                 column <- termTopicMatrix[,i]
