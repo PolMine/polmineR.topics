@@ -48,6 +48,33 @@ data(BE_labels)
 
 ```{r}
 BE <- Topicanalysis$new(topicmodel = BE_lda)
+BE$labels <- BE_labels
+```
+
+
+### Time Series Analysis
+
+A worker method `as.zoo()` will get the number of occurrences of a topic among the top k topics within a given period (month, quarter, year).
+
+```{r}
+ts_zoo <- as.zoo(BE_lda, select = grep("Flucht", BE_labels), aggregation = "quarter")
+plot(ts_zoo)
+```
+
+nicer plot xts
+
+```{r}
+library(xts)
+ts_xts_by_qtr <- xts::as.xts(ts_zoo_by_qtr)
+plot(ts_xts_by_qtr)
+```
+
+Topicanalysis
+
+```{r}
+z <- BE$as.zoo(x = 125, aggregation = "year")
+z <- BE$as.zoo(x = "Flucht, Asyl, vorläufiger Schutz", aggregation = "year")
+plot(z)
 ```
 
 ## Miscellaneous

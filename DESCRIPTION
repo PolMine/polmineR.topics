@@ -18,6 +18,7 @@ Imports:
   Hmisc,
   topicmodels,
   zoo,
+  xts,
   lsa,
   wordcloud,
   xml2,

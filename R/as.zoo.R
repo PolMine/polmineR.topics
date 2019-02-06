@@ -22,6 +22,7 @@ setGeneric("as.zoo", function(x, ...) standardGeneric("as.zoo"))
 #' @import methods
 #' @importFrom zoo zoo
 #' @importFrom stats aggregate
+#' @importFrom topicmodels topics
 #' @examples
 #' data(BE_lda, BE_labels)
 #' z <- as.zoo(BE_lda, k = 3L, aggregation = "year")

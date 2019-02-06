@@ -201,7 +201,7 @@ Topicanalysis <- R6Class(
     as.zoo = function(x = NULL, y = NULL, k = 3L, exclude = TRUE, aggregation = c(NULL, "month", "quarter", "year")){
       if (is.null(y)){
         retval <- as.zoo(self$topicmodel, k = k, aggregation = aggregation)
-        colnames(y) <- self$labels[as.integer(colnames(retval))]
+        colnames(retval) <- self$labels[as.integer(colnames(retval))]
         
         if (!is.null(x)) retval <- retval[,x]
         if (exclude) retval <- retval[, -which(self$exclude == TRUE)]
