@@ -18,6 +18,8 @@
 #' @importFrom utils read.csv read.table
 #' @importFrom stats setNames
 #' @importFrom slam simple_triplet_matrix
+#' @importFrom parallel mclapply
+#' @importFrom polmineR get_token_stream
 #' @examples 
 #' \dontrun{
 #' use("polmineR.sampleCorpus")

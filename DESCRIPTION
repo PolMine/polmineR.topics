@@ -1,44 +1,43 @@
 Package: topicanalysis
 Type: Package
 Title: tools for topicmodelling
-Version: 0.1.11
-Date: 2019-02-04
+Version: 0.1.12
+Date: 2019-02-06
 Author: Andreas Blaette
 Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
 Description: Auxiliary functions for topicmodelling.
 Encoding: UTF-8
 Depends:
-  R (>= 2.10),
+  R (>= 2.10)
+Imports:
+  polmineR,
   methods,
   R6,
-  polmineR
-Imports:
+  parallel,
   data.table,
   Hmisc,
   topicmodels,
   zoo,
-  Rmpfr,
   lsa,
   wordcloud,
   xml2,
   slam,
   shiny
 Suggests:
-  rJava
+  rJava,
+  testthat,
+  knitr
 LazyData: false
 License: GPL-3
+VignetteBuilder: knitr
 Collate:
   'read.R'
   'Topicanalysis.R'
-  'ggplot.R'
-  'ldaBundle.R'
   'as.zoo.R'
   'cooccurrences.R'
   'as.mallet.R'
   'dotchart.R'
   'shiny.R'
   'TopicanalysisBundle.R'
-  'SentenceSimilarity.R'
-  'Word2Vec.R'
   'data.R'
 RoxygenNote: 6.1.1

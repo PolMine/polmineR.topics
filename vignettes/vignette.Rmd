@@ -1,0 +1,63 @@
+---
+title: "Using the 'topicanalysis'-package"
+author: "Andreas Blätte (andreas.blaette@uni-due.de)"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+bibliography: topicmodelling.bibtex
+vignette: >
+  %\VignetteIndexEntry{Using the 'topicanalysis'-package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+
+---
+
+## Purpose
+
+Using topic models, a text mining technique originally developed for the purposes of information retrieval, has become a common technique in the social sciences [@Blätte2018]. The original algorithm, 'latent dirichlet allocation' (LDA) is the most commonly used topic model. Yet while there is a set of quantitative instruments to evaluate a topic model, there are not yet tools readily available for the qualitative evaluation of a topic model. The 'topicanalysis' package offers a workflow to integrate quantitative and qualitative analysis, and offers supplementary functionality.
+
+## Installation
+
+At this stage, the package is only available at GitHub.
+
+```{r eval = FALSE}
+devtools::install_github("PolMine/topicanalysis")
+```
+
+
+## Getting Started
+
+```{r}
+library(topicanalysis)
+```
+
+The package includes a sample LDA topicmodel for Germany's regional parliaments in Berlin ("Berliner Abgeordnetenhaus") and the Saarland ("Landtag des Saarlands").
+
+```{r}
+data(package = "topicanalysis")
+```
+
+[Lazy loading](https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Lazy-loading) of the data is delibarately not supported to keep the time to install the package minimal. We need to activate the data expressively.
+
+```{r load_data}
+data(BE_lda)
+data(BE_labels)
+```
+
+
+## The 'Topicanalysis' Class
+
+```{r}
+BE <- Topicanalysis$new(topicmodel = BE_lda)
+```
+
+## Miscellaneous
+
+```{r, fig.width = 5}
+asylum_topic_no <- grep("Asyl", BE_labels)
+dotplot(BE_lda, topic = asylum_topic_no, n = 10L)
+```
+
+
+
+## References 
+

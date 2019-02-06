@@ -8,23 +8,32 @@
 \usage{
 as.zoo(x, ...)
 
-\S4method{as.zoo}{LDA}(x, k = 3,
+\S4method{as.zoo}{LDA}(x, k = 3L,
   regex = "^.*?(\\\\d{4}-\\\\d{2}-\\\\d{2}).*?$", select = NULL,
   aggregation = NULL)
 }
 \arguments{
 \item{x}{A topicmodel inheriting from class \code{LDA}.}
 
-\item{...}{further arguments}
+\item{...}{Further arguments.}
 
-\item{k}{Number of top topics considered during aggregation.}
+\item{k}{An \code{integer} value, thenumber of top topics evaluated during
+aggregation.}
 
-\item{regex}{Regular expression to extract the date from the document name.}
+\item{regex}{Regular expression to extract the date from the document name,
+defaults to match YYYY-MM-DD.}
 
 \item{select}{topics to select}
 
-\item{aggregation}{either "year", "quarter" or month, if NULL, no aggregation is performed.}
+\item{aggregation}{Either "year", "quarter" or "month", if NULL, no
+aggregation is performed.}
 }
 \description{
-Generate Time Series Object From Topicmodel.
+For each document, the \code{k} top topics are evaluated.
+}
+\examples{
+data(BE_lda, BE_labels)
+z <- as.zoo(BE_lda, k = 3L, aggregation = "year")
+colnames(z) <- BE_labels
+plot(z[,grep("Asyl", BE_labels)])
 }

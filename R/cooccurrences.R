@@ -6,7 +6,8 @@
 #' @param sizeRef size of the ref
 #' @param method method
 #' @param progress logical
-#' @import polmineR
+#' @importClassesFrom polmineR textstat
+#' @importMethodsFrom polmineR ll chisquare
 setClass(
   "topicCooccurrence",
   slots = c(
@@ -14,7 +15,7 @@ setClass(
     sizeRef = "integer",
     method = "character"
     ),
-  contains = c("textstat")
+  contains = "textstat"
 )
 
 #' Calculate cooccurrences for a topicmodel

@@ -1,0 +1,10 @@
+year <- sub("-.*", "", meta$Date)
+note <- sprintf("R package version %s", meta$Version)
+
+bibentry(bibtype = "Manual",
+         title = "{topicanalysis}: Tools to Evaluate Topic Models",
+         author = person("Blätte", "Andreas"),
+         year = year,
+         note = note,
+         url = "https://github.com/PolMine/topicanalysis"
+)

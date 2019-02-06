@@ -3,7 +3,7 @@
 \docType{data}
 \name{Topicanalysis}
 \alias{Topicanalysis}
-\title{Topicanalysis}
+\title{Topicanalysis Class.}
 \format{An object of class \code{R6ClassGenerator} of length 24.}
 \usage{
 Topicanalysis
@@ -90,11 +90,23 @@ BE$exclude <- BE_exclude
 BE$exclude <- grepl("^\\\\((split|)\\\\)$", BE$labels)
 BE$name <- "Berlin"
 
+z <- BE$as.zoo(x = "Flucht, Asyl, vorläufiger Schutz", aggregation = "year")
+plot(z)
+
+y <- BE$as.zoo(
+  x = grep("Asyl", BE_labels),
+  y = grep("Europ", BE_labels),
+  aggregation = "year"
+)
+plot(y)
+
+
 SL <- Topicanalysis$new(topicmodel = SL_lda)
 SL$labels <- SL_labels
 SL$exclude <- SL_exclude
 SL$exclude <- grepl("^\\\\((split|)\\\\)$", SL$labels)
 SL$name <- "Hamburg"
+
 
 cp_1 <- BE$compare(SL, BE)
 cp_2 <- BE$compare(SL, BE)

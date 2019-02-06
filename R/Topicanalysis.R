@@ -1,4 +1,4 @@
-#' Topicanalysis
+#' Topicanalysis Class.
 #' 
 #' Analyse topicmodels.
 #' 
@@ -62,6 +62,17 @@
 #' BE$exclude <- BE_exclude
 #' BE$exclude <- grepl("^\\((split|)\\)$", BE$labels)
 #' BE$name <- "Berlin"
+#'
+#' z <- BE$as.zoo(x = "Flucht, Asyl, vorläufiger Schutz", aggregation = "year")
+#' plot(z)
+#' 
+#' y <- BE$as.zoo(
+#'   x = grep("Asyl", BE_labels),
+#'   y = grep("Europ", BE_labels),
+#'   aggregation = "year"
+#' )
+#' plot(y)
+#' 
 #' 
 #' SL <- Topicanalysis$new(topicmodel = SL_lda)
 #' SL$labels <- SL_labels
@@ -69,11 +80,14 @@
 #' SL$exclude <- grepl("^\\((split|)\\)$", SL$labels)
 #' SL$name <- "Hamburg"
 #' 
+#' 
 #' cp_1 <- BE$compare(SL, BE)
 #' cp_2 <- BE$compare(SL, BE)
 #' }
 #' @export Topicanalysis
-#' @import R6
+#' @name Topicanalysis
+#' @aliases Topicanalysis
+#' @importFrom R6 R6Class
 #' @importFrom wordcloud wordcloud
 #' @importFrom topicmodels posterior terms
 Topicanalysis <- R6Class(
@@ -131,7 +145,7 @@ Topicanalysis <- R6Class(
           )
         cooc[, x_label := self$labels[cooc[["x"]] ] ]
         cooc[, y_label := self$labels[cooc[["y"]] ] ]
-        if (exclude == TRUE){
+        if (exclude){
           cooc <- cooc[!cooc$x %in% which(self$exclude == TRUE),]
           cooc <- cooc[!cooc$y %in% which(self$exclude == TRUE),]
         }
@@ -184,10 +198,10 @@ Topicanalysis <- R6Class(
       read(self$topicmodel, as(self$bundle[[x]], self$type), noTopics = n, noToken = 100)
     },
 
-    as.zoo = function(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation = c(NULL, "month", "quarter", "year")){
+    as.zoo = function(x = NULL, y = NULL, k = 3L, exclude = TRUE, aggregation = c(NULL, "month", "quarter", "year")){
       if (is.null(y)){
         retval <- as.zoo(self$topicmodel, k = k, aggregation = aggregation)
-        colnames(retval) <- self$labels[as.integer(colnames(retval))]
+        colnames(y) <- self$labels[as.integer(colnames(retval))]
         
         if (!is.null(x)) retval <- retval[,x]
         if (exclude) retval <- retval[, -which(self$exclude == TRUE)]
@@ -197,11 +211,11 @@ Topicanalysis <- R6Class(
           labelPosition <- sapply(y, function(x) grep(x, self$labels))
           y <- as.integer(names(self$labels)[labelPosition])
         }
-        zooObject <- as.zoo(self$topicmodel, k=k, select=y, aggregation=aggregation)
-        colnamesSplit <- strsplit(colnames(zooObject), "-")
-        colnames(zooObject) <- sapply(
+        z <- as.zoo(self$topicmodel, k = k, select = c(x, y), aggregation = aggregation)
+        colnamesSplit <- strsplit(colnames(z), "-")
+        colnames(z) <- sapply(
           colnamesSplit,
-          function(x) paste(self$labels[x[1]], self$labels[x[2]], sep=" <-> ")
+          function(x) paste(self$labels[x[1]], self$labels[x[2]], sep = " <-> ")
         )
 
         return(zooObject)
@@ -253,7 +267,7 @@ Topicanalysis <- R6Class(
         function(column) sum(unlist(lapply(vocab, function(t) which(t == rev(column)))))
       )
       y <- y[order(y, decreasing = TRUE)]
-      y <- round(y / (length(vocab) * n), 3)
+      y <- round(y / (length(vocab) * n), 3L)
       df <- data.frame(
         topic = as.integer(gsub("^.*?\\s+(\\d+)$", "\\1", names(y))),
         score = unname(y)

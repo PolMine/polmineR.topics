@@ -3,13 +3,13 @@
 \docType{methods}
 \name{read,TopicModel-method}
 \alias{read,TopicModel-method}
-\title{read-method for TopicModel}
+\title{Fulltext Inspection for TopicModel.}
 \usage{
-\S4method{read}{TopicModel}(.Object, partitionObject, noTopics = 3,
-  noToken = 20)
+\S4method{read}{TopicModel}(.Object, partitionObject, noTopics = 3L,
+  noToken = 20L)
 }
 \arguments{
-\item{.Object}{object of the TopicModel class, or inheriting from it}
+\item{.Object}{Object of class \code{TopicModel}, or inheriting from it.}
 
 \item{partitionObject}{partition to be read}
 
