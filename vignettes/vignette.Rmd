@@ -65,7 +65,7 @@ nicer plot xts
 
 ```{r}
 library(xts)
-ts_xts_by_qtr <- xts::as.xts(ts_zoo_by_qtr)
+ts_xts_by_qtr <- xts::as.xts(ts_zoo)
 plot(ts_xts_by_qtr)
 ```
 
