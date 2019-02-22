@@ -3,35 +3,57 @@
 \docType{methods}
 \name{cooccurrences,TopicModel-method}
 \alias{cooccurrences,TopicModel-method}
-\title{Calculate cooccurrences for a topicmodel}
+\title{Get topic cooccurrences.}
 \usage{
 \S4method{cooccurrences}{TopicModel}(.Object, k, regex = NULL,
   docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE)
 }
 \arguments{
-\item{.Object}{the object}
+\item{.Object}{An \code{LDA} object.}
 
-\item{k}{the k first topics to consider}
+\item{k}{An \code{integer} value, the \code{k} first topics to consider for
+counting cooccurrences.}
 
-\item{regex}{if provided, the procedure will be limited to document names matching the regex (defaults to NULL)}
+\item{regex}{If not \code{NULL} (default), the procedure will be limited to
+document names matching the regular expression provided by \code{regex}.}
 
-\item{docs}{if provided, the procedure will be limited to documents matching the character string}
+\item{docs}{If not \code{NULL}, the procedure will be limited to documents
+matching the character string.}
 
-\item{renumber}{if not NULL (the default), an integer vector (length = number of topics) supplying new topic numbers}
+\item{renumber}{If not \code{NULL} (the default), an \code{integer} vector
+(length = number of topics) supplying new topic numbers.}
 
-\item{progress}{logical}
+\item{progress}{A \code{logical} value.}
 
-\item{verbose}{logical}
+\item{verbose}{A \code{logical} value.}
 }
 \description{
-Calculate cooccurrences for a topicmodel
+Get topic cooccurrences.
 }
 \examples{
-\dontrun{
-setwd("/Users/blaette/Lab/repos/arenen/analysis/corpusConsolidation/BT")
-lda <- readRDS("lda_bt_arbeit_50.RData")
-topic_cooccurrencs <- cooccurrences(lda, k=3)
-dt <- subset(topic_cooccurrences, chisquare >= threshold, select=c("x", "y"))
-igraph::graph_from_data_frame(dt)
+data(BE_lda, BE_labels)
+dt <- cooccurrences(BE_lda, k = 3L)
+topics_to_drop <- grep("^\\\\(.*?\\\\)$", BE_labels)
+dt_min <- dt[chisquare >= 10.83][!a \%in\% topics_to_drop][!b \%in\% topics_to_drop]
+dt_min[, "a_label" := BE_labels[ dt_min[["a"]] ] ]
+dt_min[, "b_label" := BE_labels[ dt_min[["b"]] ] ]
+
+if (requireNamespace("igraph")){
+g <- igraph::graph_from_data_frame(
+  d = data.frame(
+    from = dt_min[["a_label"]],
+    to = dt_min[["b_label"]],
+    n = dt_min[["count_coi"]],
+    stringsAsFactors = FALSE
+  ),
+  directed = TRUE
+)
+g <- igraph::as.undirected(g, mode = "collapse")
+if (interactive()){
+  plot.igraph(
+    g, shape = "square", vertex.color = "steelblue",
+    label = V(g)$name, label.family = 11, label.cex = 0.5
+  )
+}
 }
 }

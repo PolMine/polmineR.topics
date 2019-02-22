@@ -17,23 +17,53 @@ as.zoo(x, ...)
 
 \item{...}{Further arguments.}
 
-\item{k}{An \code{integer} value, thenumber of top topics evaluated during
-aggregation.}
+\item{k}{An \code{integer} value, the number of top topics evaluated.}
 
 \item{regex}{Regular expression to extract the date from the document name,
-defaults to match YYYY-MM-DD.}
+defaults to match pattern YYYY-MM-DD.}
 
-\item{select}{topics to select}
+\item{select}{An \code{integer} vector, topics to select.}
 
-\item{aggregation}{Either "year", "quarter" or "month", if NULL, no
+\item{aggregation}{Either "year", "quarter" or "month", if \code{NULL}, no
 aggregation is performed.}
 }
 \description{
 For each document, the \code{k} top topics are evaluated.
 }
+\details{
+The document names of the \code{LDA} object are assumed to include a date
+that can be extracted by using a regular expression (argument \code{regex}).
+If argument \code{select} is \code{NULL}, the time series is prepared for
+all topics. If \code{select} is a length-one \code{integer} value, the time
+series is reported only for single topic. If \code{select} is a length-two
+\code{integer} vector, the dispersion of the co-occurrence of the two topics
+across time is returned.
+}
 \examples{
 data(BE_lda, BE_labels)
+
+# The document names are assumed to include a date that can be 
+# extracted and parsed
+head(BE_lda@documents)
+
+# Get time series for all topics
 z <- as.zoo(BE_lda, k = 3L, aggregation = "year")
+dim(z)
 colnames(z) <- BE_labels
-plot(z[,grep("Asyl", BE_labels)])
+plot(z[,grep("Asyl", BE_labels)]) # subsequent subsetting
+
+# Get time series for a single topic
+z <- as.zoo(BE_lda, k = 3L, aggregation = "year", select = grep("Asyl", BE_labels))
+plot(z)
+
+# Get time series for the co-occurrence of two topics
+z <- as.zoo(BE_lda, k = 3L, select = c(28L, 203L), aggregation = "month")
+z <- as.zoo(
+  BE_lda, k = 3L,
+  select = c(
+    grep("Asyl", BE_labels),
+    grep("Integration", BE_labels)
+  )
+)
+
 }

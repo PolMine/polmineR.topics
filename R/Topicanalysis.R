@@ -2,14 +2,17 @@
 #' 
 #' Analyse topicmodels.
 #' 
-#' @field topicmodel A topicmodel of class \code{TopicModel}, generated from package \code{topicmodels}.
+#' @field topicmodel A topicmodel of class \code{TopicModel}, generated from
+#'   package \code{topicmodels}.
 #' @field posterior Slot to store posterior, not used at this point.
-#' @field terms The \code{matrix} with the terms of a topicmodel; stored to .
-#' @field bundle A \code{partitionBundle}, required to use method \code{read} to access full text.
-#' @field labels A character vector, labels for the topics.
+#' @field terms The \code{matrix} with the terms of a topicmodel. Keeping the
+#'   terms may speed up subsequent operations.
+#' @field bundle A \code{partition_bundle}, required to use method \code{read}
+#'   to access full text.
+#' @field labels A \code{character} vector, labels for the topics.
 #' @field name A name for the \code{Topicanalysis} object. Useful if combining
 #'   several objects into a bundle.
-#' @field categories A character vector with categories.
+#' @field categories A \code{character} vector with categories.
 #' @field grouping Not used at this stage.
 #' @field exclude Topics to exclude from further analysis.
 #' @field type Corpus type, necessary for applying correct template for fulltext output.
@@ -18,13 +21,16 @@
 #' \describe{
 #'   \item{new}{New value for a label or a category.}
 #'   \item{n}{Number of a topic.}
-#'   \item{n_words}{An integer, the number of words to be displayed in a wordcloud.}
+#'   \item{n_words}{An \code{integer}, the number of words to be displayed in a wordcloud.}
 #'   \item{x}{Number or name of a topics.}
 #'   \item{y}{Number or name of a topic cooccurring with x.}
-#'   \item{k}{Number of top topics in a document considered.}
-#'   \item{exclude}{A logical value, whether to to exclude topics earmarked in logical vector in field exclude.}
+#'   \item{k}{Number of top topics of a document to consider.}
+#'   \item{exclude}{A \code{logical} value, whether to to exclude topics
+#'   earmarked in logical vector in field exclude.}
 #'   \item{aggregation}{Level of aggregation of \code{as.zoo} method.}
-#'   \item{...}{Further parameters passed to worker function (\code{wordcloud}, for instance).}
+#'   \item{...}{Further parameters passed to worker function (such as
+#'   \code{wordcloud::wordcloud} when calling \code{$wordcloud()}, for
+#'   instance).}
 #' }
 #' 
 #' @section Methods:
@@ -33,36 +39,37 @@
 #'   object. Upon initialization, labels will be the plain numbers of the
 #'   topics, all exclude values are \code{FALSE}.}
 #'   \item{\code{$cooccurrences(k = 3, regex = NULL, docs = NULL, renumber = NULL,
-#'   progress = TRUE, exclude = TRUE)}}{ Get cooccurrences of topics. Params are
-#'   documented with the S4 cooccurrences-method for TopicModel-objects. }
-#'   \item{\code{$relabel(n, new)}}{Relabel topic \code{n}, assigning new label \code{new}.}
-#'   \item{\code{$add_category(new)}}{Add a new category.}
+#'   progress = TRUE, exclude = TRUE)}}{Get cooccurrences of topics. Arguments are
+#'   documented with the S4 cooccurrences-method for TopicModel-objects.}
+#'   \item{\code{$relabel(n, new)}}{Relabel topic \code{n}, assigning new label
+#'   \code{new}.}
+#'   \item{\code{$add_category(new)}}{Add \code{new}, a \code{character} vector
+#'   as a new category to the \code{character} vector in the field
+#'   \code{category}.}
 #'   \item{\code{$ignorance(n, new)}}{Exclude topic \code{n} (i.e. add to ignore).}
-#'   \item{\code{$cooccurrence(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE)}}{Get cooccurrences of topics.}
-#'   \item{\code{$wordcloud(x = 1, n = 50, ...)}}{Generate wordcloud for topic \code{x}, with \code{n} words.}
-#'   \item{\code{$docs(x, y = NULL, n = 3, sAttributes = NULL)}}{Get documents where topic \code{x} occurrs among the top \code{n} topics.}
+#'   \item{\code{$wordcloud(n, n = 50, ...)}}{Generate wordcloud for topic
+#'   \code{n}, with \code{n_words} words. Further arguments can be passed into
+#'   \code{wordcloud::wordcloud} usint the three dots.}
+#'   \item{\code{$docs(x, y = NULL, n = 3, sAttributes = NULL)}}{Get documents
+#'   where topic \code{x} occurrs among the top \code{n} topics.}
 #'   \item{\code{$read(x, n = 3, noToken = 100)}}{Read stuff.}
 #'   \item{\code{$as.zoo(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation
-#'   = c(NULL, "month", "quarter", "year"))}}{Generate \code{zoo} object from topicmodel.}
+#'   = c(NULL, "month", "quarter", "year"))}}{Generate \code{zoo} object from
+#'   topicmodel.}
 #'   \item{\code{$compare(x, ...)}}{Compare the similarity of two topicmodels.}
 #'   \item{\code{$find_topics(x, n = 100, word2vec = NULL)}}{Find a topic.}
 #' }
 #' @examples
-#' \dontrun{
 #' data(BE_lda)
 #' data(BE_labels)
 #' data(BE_exclude)
-#' 
-#' data(SL_lda)
-#' data(SL_labels)
-#' data(SL_exclude)
 #' 
 #' BE <- Topicanalysis$new(topicmodel = BE_lda)
 #' BE$labels <- BE_labels
 #' BE$exclude <- BE_exclude
 #' BE$exclude <- grepl("^\\((split|)\\)$", BE$labels)
 #' BE$name <- "Berlin"
-#'
+#' 
 #' z <- BE$as.zoo(x = "Flucht, Asyl, vorläufiger Schutz", aggregation = "year")
 #' plot(z)
 #' 
@@ -73,6 +80,35 @@
 #' )
 #' plot(y)
 #' 
+#' BE$exclude <- grepl("^\\(.*?\\)$", BE$labels)
+#' dt <- BE$cooccurrences(k = 3L, exclude = TRUE)
+#' dt_min <- dt[chisquare >= 10.83]
+#' 
+#' 
+#' if (requireNamespace("igraph")){
+#' g <- igraph::graph_from_data_frame(
+#'   d = data.frame(
+#'     from = dt_min[["a_label"]],
+#'     to = dt_min[["b_label"]],
+#'     n = dt_min[["count_coi"]],
+#'     stringsAsFactors = FALSE
+#'   ),
+#'   directed = TRUE
+#' )
+#' g <- igraph::as.undirected(g, mode = "collapse")
+#' if (interactive()){
+#'   igraph::plot.igraph(
+#'     g, shape = "square", vertex.color = "steelblue",
+#'     label = igraph::V(g)$name, label.family = 11, label.cex = 0.5
+#'   )
+#' }
+#' }
+#' 
+#' #############################
+#' 
+#' data(SL_lda)
+#' data(SL_labels)
+#' data(SL_exclude)
 #' 
 #' SL <- Topicanalysis$new(topicmodel = SL_lda)
 #' SL$labels <- SL_labels
@@ -80,10 +116,9 @@
 #' SL$exclude <- grepl("^\\((split|)\\)$", SL$labels)
 #' SL$name <- "Hamburg"
 #' 
-#' 
 #' cp_1 <- BE$compare(SL, BE)
 #' cp_2 <- BE$compare(SL, BE)
-#' }
+#' 
 #' @export Topicanalysis
 #' @name Topicanalysis
 #' @aliases Topicanalysis
@@ -127,8 +162,8 @@ Topicanalysis <- R6Class(
     add_category = function(new){
       stopifnot(is.character(new))
       if (new != ""){
-        newCategories <- c(new, self$categories)
-        self$categories <- newCategories[order(newCategories)]
+        new_categories <- c(new, self$categories)
+        self$categories <- new_categories[order(new_categories)]
       }
     },
 
@@ -138,24 +173,25 @@ Topicanalysis <- R6Class(
     },
 
     cooccurrences = function(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE){
-      if(is.null(renumber)){
+      if (is.null(renumber)){
         cooc <- cooccurrences(
           self$topicmodel, k = k, regex = regex, docs = docs,
           progress = progress
-          )
-        cooc[, x_label := self$labels[cooc[["x"]] ] ]
-        cooc[, y_label := self$labels[cooc[["y"]] ] ]
+        )
+        cooc[, "a_label" := self$labels[ cooc[["a"]] ] ]
+        cooc[, "b_label" := self$labels[cooc[["b"]] ] ]
         if (exclude){
-          cooc <- cooc[!cooc$x %in% which(self$exclude == TRUE),]
-          cooc <- cooc[!cooc$y %in% which(self$exclude == TRUE),]
+          cooc <- cooc[!cooc$a %in% which(self$exclude == TRUE),]
+          cooc <- cooc[!cooc$b %in% which(self$exclude == TRUE),]
         }
+        return(cooc)
       } else {
         stopifnot(is.integer(renumber))
         cooc <- cooccurrences(
           self$topicmodel, k = k, regex = regex, docs = docs, renumber = unname(renumber),
           progress = progress
-          )
-        if (exclude == TRUE){
+        )
+        if (exclude){
           cooc <- cooc[x > 0][y > 0]
           labelVector <- renumber[which(renumber > 0)]
           labelVector2 <- sapply(split(labelVector, names(labelVector)), function(x) unique(x))
@@ -168,8 +204,8 @@ Topicanalysis <- R6Class(
           }
           
         }
+        return(cooc)
       }
-      cooc
     },
 
     wordcloud = function(n, n_words = 50, ...){
@@ -217,8 +253,7 @@ Topicanalysis <- R6Class(
           colnamesSplit,
           function(x) paste(self$labels[x[1]], self$labels[x[2]], sep = " <-> ")
         )
-
-        return(zooObject)
+        return(z)
       }
     },
 

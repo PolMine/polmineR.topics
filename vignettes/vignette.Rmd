@@ -15,20 +15,24 @@ vignette: >
 
 Using topic models, a text mining technique originally developed for the purposes of information retrieval, has become a common technique in the social sciences [@Blätte2018]. The original algorithm, 'latent dirichlet allocation' (LDA) is the most commonly used topic model. Yet while there is a set of quantitative instruments to evaluate a topic model, there are not yet tools readily available for the qualitative evaluation of a topic model. The 'topicanalysis' package offers a workflow to integrate quantitative and qualitative analysis, and offers supplementary functionality.
 
+
 ## Installation
 
-At this stage, the package is only available at GitHub.
+At this stage, the package is only available at GitHub. The *devtools*-package offers a convenient function to install the package from GitHub.
 
 ```{r eval = FALSE}
 devtools::install_github("PolMine/topicanalysis")
 ```
 
 
-## Getting Started
+## Loading the package
 
 ```{r}
 library(topicanalysis)
 ```
+
+
+## Sample data
 
 The package includes a sample LDA topicmodel for Germany's regional parliaments in Berlin ("Berliner Abgeordnetenhaus") and the Saarland ("Landtag des Saarlands").
 
@@ -36,7 +40,7 @@ The package includes a sample LDA topicmodel for Germany's regional parliaments 
 data(package = "topicanalysis")
 ```
 
-[Lazy loading](https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Lazy-loading) of the data is delibarately not supported to keep the time to install the package minimal. We need to activate the data expressively.
+[Lazy loading](https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Lazy-loading) of the data is delibarately not supported to keep the time to install the package minimal. If we want to use the LDA topic models shipped with the package, we need to activate the data expressively.
 
 ```{r load_data}
 data(BE_lda)
@@ -54,14 +58,22 @@ BE$labels <- BE_labels
 
 ### Time Series Analysis
 
+#### Using the `as.zoo()`-method
+
 A worker method `as.zoo()` will get the number of occurrences of a topic among the top k topics within a given period (month, quarter, year).
 
 ```{r}
 ts_zoo <- as.zoo(BE_lda, select = grep("Flucht", BE_labels), aggregation = "quarter")
+is(ts_zoo)
+```
+
+The *zoo*-package offers a convenient plotting function for `zoo`-objects.
+
+```{r}
 plot(ts_zoo)
 ```
 
-nicer plot xts
+An alternative is to use the plotting capabilities of the *xts*-package.
 
 ```{r}
 library(xts)
@@ -69,13 +81,17 @@ ts_xts_by_qtr <- xts::as.xts(ts_zoo)
 plot(ts_xts_by_qtr)
 ```
 
-Topicanalysis
+
+#### Topicanalysis class
+
+The `Topicanalysis` class has a method for extracting the time series information from the LDA object.
 
 ```{r}
 z <- BE$as.zoo(x = 125, aggregation = "year")
 z <- BE$as.zoo(x = "Flucht, Asyl, vorläufiger Schutz", aggregation = "year")
 plot(z)
 ```
+
 
 ## Miscellaneous
 
@@ -85,6 +101,14 @@ dotplot(BE_lda, topic = asylum_topic_no, n = 10L)
 ```
 
 
+### Wordcloud for topic vocabulary
+
+```{r}
+BE$wordcloud(
+  n = 125L, n_words = 25,
+  colors = RColorBrewer::brewer.pal(n = 9L, name = "Dark2")
+)
+```
 
 ## References 
 

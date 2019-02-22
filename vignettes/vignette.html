@@ -12,7 +12,7 @@
 
 <meta name="author" content="Andreas Blätte (andreas.blaette@uni-due.de)" />
 
-<meta name="date" content="2019-02-06" />
+<meta name="date" content="2019-02-21" />
 
 <title>Using the ‘topicanalysis’-package</title>
 
@@ -302,7 +302,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Using the ‘topicanalysis’-package</h1>
 <h4 class="author"><em>Andreas Blätte (<a href="mailto:andreas.blaette@uni-due.de">andreas.blaette@uni-due.de</a>)</em></h4>
-<h4 class="date"><em>2019-02-06</em></h4>
+<h4 class="date"><em>2019-02-21</em></h4>
 
 
 
@@ -312,15 +312,18 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </div>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
-<p>At this stage, the package is only available at GitHub.</p>
+<p>At this stage, the package is only available at GitHub. The <em>devtools</em>-package offers a convenient function to install the package from GitHub.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1">devtools<span class="op">::</span><span class="kw">install_github</span>(<span class="st">&quot;PolMine/topicanalysis&quot;</span>)</a></code></pre></div>
 </div>
-<div id="getting-started" class="section level2">
-<h2>Getting Started</h2>
+<div id="loading-the-package" class="section level2">
+<h2>Loading the package</h2>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">library</span>(topicanalysis)</a></code></pre></div>
+</div>
+<div id="sample-data" class="section level2">
+<h2>Sample data</h2>
 <p>The package includes a sample LDA topicmodel for Germany’s regional parliaments in Berlin (“Berliner Abgeordnetenhaus”) and the Saarland (“Landtag des Saarlands”).</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">data</span>(<span class="dt">package =</span> <span class="st">&quot;topicanalysis&quot;</span>)</a></code></pre></div>
-<p><a href="https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Lazy-loading">Lazy loading</a> of the data is delibarately not supported to keep the time to install the package minimal. We need to activate the data expressively.</p>
+<p><a href="https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Lazy-loading">Lazy loading</a> of the data is delibarately not supported to keep the time to install the package minimal. If we want to use the LDA topic models shipped with the package, we need to activate the data expressively.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1"><span class="kw">data</span>(BE_lda)</a>
 <a class="sourceLine" id="cb4-2" data-line-number="2"><span class="kw">data</span>(BE_labels)</a></code></pre></div>
 </div>

@@ -18,7 +18,6 @@ Imports:
   Hmisc,
   topicmodels,
   zoo,
-  xts,
   lsa,
   wordcloud,
   xml2,
@@ -27,7 +26,10 @@ Imports:
 Suggests:
   rJava,
   testthat,
-  knitr
+  knitr,
+  igraph,
+  xts,
+  RColorBrewer
 LazyData: false
 License: GPL-3
 VignetteBuilder: knitr
