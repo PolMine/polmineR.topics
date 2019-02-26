@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 bibliography: topicmodelling.bibtex
 vignette: >
-  %\VignetteIndexEntry{Using the 'topicanalysis'-package}
+  %\VignetteIndexEntry{Introduction to topicanalysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 
@@ -108,6 +108,41 @@ BE$wordcloud(
   n = 125L, n_words = 25,
   colors = RColorBrewer::brewer.pal(n = 9L, name = "Dark2")
 )
+```
+
+
+### Reading
+
+```{r, eval = TRUE, message = FALSE}
+BE$type <- "plpr_partition"
+
+topic_flucht <- 125L
+topic_integration <- 241
+docs <- BE$docs(x = 125L, y = 241L)
+
+library(polmineR)
+use("PopParl")
+
+li <- lapply(
+  docs,
+  function(doc){
+    as.speeches(
+      partition(
+        "BE",
+        who = gsub("^(.*?)_.*$", "\\1", doc),
+        date = gsub("^.*(\\d{4}-\\d{2}-\\d{2})_\\d+$", "\\1", doc)
+      ),
+      s_attribute_name = "who"
+    )[[as.integer(gsub("^.*?_(\\d+)$", "\\1", doc))]]
+})
+
+BE$bundle <- as.partition_bundle(li)
+p <- BE$bundle[[1]]
+h <- get_highlight_list(BE$topicmodel, partition_obj = p, no_token = 150)
+
+library(magrittr)
+html(p, height = "250px") %>% highlight(highlight = h)
+
 ```
 
 ## References 

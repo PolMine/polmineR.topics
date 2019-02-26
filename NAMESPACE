@@ -2,6 +2,7 @@
 
 export(Topicanalysis)
 export(TopicanalysisBundle)
+export(get_highlight_list)
 export(malletCmd)
 export(topicanalysis)
 exportMethods(as.mallet)

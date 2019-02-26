@@ -5,18 +5,44 @@
 \alias{read,TopicModel-method}
 \title{Fulltext Inspection for TopicModel.}
 \usage{
-\S4method{read}{TopicModel}(.Object, partitionObject, noTopics = 3L,
-  noToken = 20L)
+\S4method{read}{TopicModel}(.Object, partition_obj, no_topics = 3L,
+  no_token = 20L)
 }
 \arguments{
-\item{.Object}{Object of class \code{TopicModel}, or inheriting from it.}
+\item{.Object}{Object of class \code{TopicModel}, or a class inheriting from
+it.}
 
-\item{partitionObject}{partition to be read}
+\item{partition_obj}{A \code{partition} object, the partition to display.}
 
-\item{noTopics}{the number of the most prevalant topics in a text that will be highlighted}
+\item{no_topics}{The number of the most prevalant topics in a text that will be highlighted.}
 
-\item{noToken}{the number of tokens to be be highlighted}
+\item{no_token}{An \code{integer} value, the number of tokens indicative of a
+topic according to the input topic model to be be highlighted}
 }
 \description{
-foo
+Highlight the vocabulary indicative of the top terms (number specified by
+\code{no_topics}) for the top topics (number specified by
+\code{no_topics}present in a \code{partition}.
+}
+\examples{
+data(BE_lda)
+data(BE_labels)
+data(BE_exclude)
+
+BE <- Topicanalysis$new(topicmodel = BE_lda)
+BE$labels <- BE_labels
+BE$type <- "plpr_partition"
+
+topic_flucht <- 125L
+topic_integration <- 241
+BE$docs(x = 125L, y = 241L)
+use("PopParl")
+p <- partition("BE", date = "2005-04-28", who = "Körting")
+pb <- as.speeches(p, s_attribute_name = "who")
+p <- pb[[4]]
+
+y <- new("plpr_partition")
+for (z in slotNames(p)) slot(y, z) <- slot(p, z)
+read(BE_lda, p, no_token = 150)
+
 }

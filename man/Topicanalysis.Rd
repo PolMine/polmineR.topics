@@ -75,9 +75,14 @@ several objects into a bundle.}
   \item{\code{$wordcloud(n, n = 50, ...)}}{Generate wordcloud for topic
   \code{n}, with \code{n_words} words. Further arguments can be passed into
   \code{wordcloud::wordcloud} usint the three dots.}
-  \item{\code{$docs(x, y = NULL, n = 3, sAttributes = NULL)}}{Get documents
-  where topic \code{x} occurrs among the top \code{n} topics.}
-  \item{\code{$read(x, n = 3, noToken = 100)}}{Read stuff.}
+  \item{\code{$docs(x, y = NULL, n = 3L, s_attributes = NULL)}}{Get documents
+  where topic \code{x} occurrs among the top \code{n} topics. If \code{y} is 
+  provided, documents are returned where \code{x} and \code{y} are among the
+  \code{n} top topics. If \code{x} or \code{y} are provided as a \code{character}
+  vector, the method will look up this label in the \code{labels} field.}
+  \item{\code{$read(x, n = 3, no_token = 100)}}{Read document \code{x},
+  highlighting the number of topics specified by \code{n}, indicated by
+  \code{no_token}.}
   \item{\code{$as.zoo(x = NULL, y = NULL, k = 3, exclude = TRUE, aggregation
   = c(NULL, "month", "quarter", "year"))}}{Generate \code{zoo} object from
   topicmodel.}
@@ -96,6 +101,7 @@ BE$labels <- BE_labels
 BE$exclude <- BE_exclude
 BE$exclude <- grepl("^\\\\((split|)\\\\)$", BE$labels)
 BE$name <- "Berlin"
+BE$type <- "plpr_partition"
 
 z <- BE$as.zoo(x = "Flucht, Asyl, vorläufiger Schutz", aggregation = "year")
 plot(z)
@@ -129,6 +135,37 @@ if (interactive()){
     label = igraph::V(g)$name, label.family = 11, label.cex = 0.5
   )
 }
+}
+
+topic_flucht <- 125L
+topic_integration <- 241
+BE$docs(x = "Flucht, Asyl, vorläufiger Schutz")
+BE$docs(x = grep("Flucht", BE$labels))
+BE$docs(x = 125L)
+docs <- BE$docs(x = 125L, y = 241L)
+
+li <- lapply(
+  docs, 
+  function(doc){
+    as.speeches(
+      partition(
+        "BE",
+        who = gsub("^(.*?)_.*$", "\\\\1", doc),
+        date = gsub("^.*(\\\\d{4}-\\\\d{2}-\\\\d{2})_\\\\d+$", "\\\\1", doc)
+      ),
+      s_attribute_name = "who"
+    )[[as.integer(gsub("^.*?_(\\\\d+)$", "\\\\1", doc))]]
+})
+BE$bundle <- as.partition_bundle(li)
+
+read(BE$topicmodel, BE$bundle[[1]], n = 3L, no_token = 250)
+read(BE$topicmodel, BE$bundle[[2]], n = 3L, no_token = 250)
+read(BE$topicmodel, BE$bundle[[3]], n = 3L, no_token = 250)
+for (doc in docs){
+  print(doc)
+  p <- BE$bundle[[doc]]
+  read(BE$topicmodel, p, n = 3L, no_token = 250)
+  readline(prompt = "Hit any key to continue.")
 }
 
 #############################

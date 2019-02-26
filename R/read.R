@@ -1,47 +1,76 @@
 #' @importFrom topicmodels topics
 #' @importMethodsFrom polmineR name
-.makeHighlightList <- function(.Object, partitionObject, noTopics = 3, noToken = 20){
-  highlightColors <- c("yellow", "lightgreen", "orange", "blue", "red", "brown")
-  if (noTopics == 1){
-    # if k=1, topics() returns a vector
-    topicsInPartition <- topics(.Object, k = noTopics)[name(partitionObject)]
+#' @export get_highlight_list
+get_highlight_list <- function(.Object, partition_obj, no_topics = 3L, no_token = 20L){
+  highlight_colors <- c("yellow", "lightgreen", "orange", "blue", "red", "brown")
+  if (no_topics == 1){
+    topics_in_partition <- topics(.Object, k = no_topics)[name(partition_obj)]
   } else {
-    topicsInPartition <- topics(.Object, k = noTopics)[,name(partitionObject)]
-    topicsMatrix <- terms(.Object, k = noToken)[, paste("Topic", topicsInPartition, sep = " ")]
-    topicsDf <- as.data.frame(topicsMatrix)
-    colorLabels <- paste("[", highlightColors[1L:noTopics], "]", sep="")
+    topics_in_partition <- topics(.Object, k = no_topics)[,name(partition_obj)]
+    topics_matrix <- terms(.Object, k = no_token)[, paste("Topic", topics_in_partition, sep = " ")]
+    topics_df <- as.data.frame(topics_matrix)
+    color_labels <- paste("[", highlight_colors[1L:no_topics], "]", sep = "")
     # add labels to the data.frame
-    for (i in 1L:ncol(topicsDf)) Hmisc::label(topicsDf[[i]]) <- colorLabels[i]
+    for (i in 1L:ncol(topics_df)) Hmisc::label(topics_df[[i]]) <- color_labels[i]
     # View(topicsDf)
   }
-  topicsVocab <- lapply(
-    topicsInPartition,
+  topics_vocab <- lapply(
+    topics_in_partition,
     function(i){
-      colToGet <- paste("Topic", as.character(i), sep = " ")
-      termsToHighlight <- terms(.Object, k = noToken)[, colToGet]
-      termsToRemove <- grep('[;,:\\.\\-\\(\\)]', termsToHighlight)
-      if (length(termsToRemove) > 0){
-        for (j in rev(termsToRemove)) termsToHighlight <- termsToHighlight[-j]
+      col_to_get <- paste("Topic", as.character(i), sep = " ")
+      terms_to_highlight <- terms(.Object, k = no_token)[, col_to_get]
+      terms_to_remove <- grep('[;,:\\.\\-\\(\\)]', terms_to_highlight)
+      if (length(terms_to_remove) > 0){
+        for (j in rev(terms_to_remove)) terms_to_highlight <- terms_to_highlight[-j]
       }
-      paste("\\b", termsToHighlight, "\\b", sep = "")
+      # paste("\\b", terms_to_highlight, "\\b", sep = "")
+      terms_to_highlight
     })
-  names(topicsVocab) <- highlightColors[1L:noTopics]
-  topicsVocab
+  names(topics_vocab) <- highlight_colors[1L:no_topics]
+  topics_vocab
 }
 
 
 #' Fulltext Inspection for TopicModel.
 #' 
-#' foo
+#' Highlight the vocabulary indicative of the top terms (number specified by
+#' \code{no_topics}) for the top topics (number specified by
+#' \code{no_topics}present in a \code{partition}.
 #'
-#' @param .Object Object of class \code{TopicModel}, or inheriting from it.
-#' @param noTopics the number of the most prevalant topics in a text that will be highlighted
-#' @param noToken the number of tokens to be be highlighted
-#' @param partitionObject partition to be read
+#' @param .Object Object of class \code{TopicModel}, or a class inheriting from
+#'   it.
+#' @param no_topics The number of the most prevalant topics in a text that will be highlighted.
+#' @param no_token An \code{integer} value, the number of tokens indicative of a
+#'   topic according to the input topic model to be be highlighted
+#' @param partition_obj A \code{partition} object, the partition to display.
 #' @rdname read_TopicModel_method
 #' @importMethodsFrom polmineR read
 #' @exportMethod read
-setMethod("read", "TopicModel", function(.Object, partitionObject, noTopics = 3L, noToken = 20L){
-  topicsVocab <- .makeHighlightList(.Object=.Object, partitionObject=partitionObject, noTopics=noTopics, noToken=noToken)
-  read(partitionObject, highlight = topicsVocab, cqp = FALSE, interjections = TRUE)
+#' @examples
+#' data(BE_lda)
+#' data(BE_labels)
+#' data(BE_exclude)
+#' 
+#' BE <- Topicanalysis$new(topicmodel = BE_lda)
+#' BE$labels <- BE_labels
+#' BE$type <- "plpr_partition"
+#' 
+#' topic_flucht <- 125L
+#' topic_integration <- 241
+#' BE$docs(x = 125L, y = 241L)
+#' 
+#' # cwbtools::corpus_install(pkg = "topicanaylsis", tarball = "http://polmine.sowi.uni-due.de/corpora/cwb/fedparl/bb.tar.gz", user = "blaette", password = "cuba1962")
+#' 
+#' use("PopParl")
+#' p <- partition("BE", date = "2005-04-28", who = "Körting")
+#' pb <- as.speeches(p, s_attribute_name = "who")
+#' p <- pb[[4]]
+#' 
+#' y <- new("plpr_partition")
+#' for (z in slotNames(p)) slot(y, z) <- slot(p, z)
+#' read(BE_lda, p, no_token = 150)
+#' 
+setMethod("read", "TopicModel", function(.Object, partition_obj, no_topics = 3L, no_token = 20L){
+  highlight <- get_highlight_list(.Object = .Object, partition_obj = partition_obj, no_topics = no_topics, no_token = no_token)
+  read(partition_obj, highlight = highlight, cqp = FALSE, interjections = TRUE)
 })
