@@ -6,7 +6,7 @@
 \alias{as.mallet,partition_bundle-method}
 \alias{malletCmd}
 \alias{malletImport}
-\alias{store,jobjRef-method}
+\alias{store_java_object}
 \title{Interface to mallet topicmodelling.}
 \usage{
 as.mallet(.Object, ...)
@@ -19,7 +19,7 @@ malletCmd(sourcefile, targetDir = "/Users/blaette/Lab/tmp/mallet_result",
 
 malletImport(dir = "/Users/blaette/Lab/tmp/mallet_result")
 
-\S4method{store}{jobjRef}(.Object, filename = tempfile())
+store_java_object(.Object, filename = tempfile())
 }
 \arguments{
 \item{.Object}{\code{partition}, \code{partition_bundle}, or \code{rJava} object}

@@ -1,6 +1,7 @@
 #' @importFrom topicmodels topics
 #' @importMethodsFrom polmineR name
 #' @export get_highlight_list
+#' @rdname read_TopicModel_method
 get_highlight_list <- function(.Object, partition_obj, no_topics = 3L, no_token = 20L){
   highlight_colors <- c("yellow", "lightgreen", "orange", "blue", "red", "brown")
   if (no_topics == 1){
@@ -59,17 +60,25 @@ get_highlight_list <- function(.Object, partition_obj, no_topics = 3L, no_token 
 #' topic_integration <- 241
 #' BE$docs(x = 125L, y = 241L)
 #' 
-#' # cwbtools::corpus_install(pkg = "topicanaylsis", tarball = "http://polmine.sowi.uni-due.de/corpora/cwb/fedparl/bb.tar.gz", user = "blaette", password = "cuba1962")
+#' # As sample data, we use a corpus of plenary debates in the 
+#' # 'Berliner Abgeordnetenhaus'. It is somewhat big and not included
+#' # in the package by default. 
 #' 
-#' use("PopParl")
+#' \dontrun{
+#' polmineR::use("topicanalysis")
+#' if (!"BE" %in% corpus()$corpus){
+#'   cwbtools::corpus_install(
+#'     pkg = "topicanalysis",
+#'     tarball = "http://polmine.sowi.uni-due.de/corpora/cwb/berlin/be.tar.gz"
+#'   )
+#'   polmineR::use("topicanalysis") # to activate corpus 'BE'
+#' }
+#' 
 #' p <- partition("BE", date = "2005-04-28", who = "Körting")
-#' pb <- as.speeches(p, s_attribute_name = "who")
-#' p <- pb[[4]]
+#' p <- polmineR::as.speeches(p, s_attribute_name = "who")[[4]]
 #' 
-#' y <- new("plpr_partition")
-#' for (z in slotNames(p)) slot(y, z) <- slot(p, z)
 #' read(BE_lda, p, no_token = 150)
-#' 
+#' }
 setMethod("read", "TopicModel", function(.Object, partition_obj, no_topics = 3L, no_token = 20L){
   highlight <- get_highlight_list(.Object = .Object, partition_obj = partition_obj, no_topics = no_topics, no_token = no_token)
   read(partition_obj, highlight = highlight, cqp = FALSE, interjections = TRUE)

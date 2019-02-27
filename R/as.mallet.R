@@ -188,11 +188,11 @@ malletImport <- function(dir = "/Users/blaette/Lab/tmp/mallet_result"){
 }
 
 
-setOldClass(Classes = "jobjRef")
+# setOldClass(Classes = "jobjRef")
 
 #' @rdname mallet
-#' @importMethodsFrom polmineR store
-setMethod("store", "jobjRef", function(.Object, filename = tempfile()){
+#' @export store_java_object
+store_java_object <- function(.Object, filename = tempfile()){
   if (!requireNamespace(package = "rJava", quietly = TRUE)){
     stop("rJava package not available")
   }
@@ -201,5 +201,5 @@ setMethod("store", "jobjRef", function(.Object, filename = tempfile()){
   objectStream$writeObject(.Object)
   objectStream$close()
   filename
-})
+}
 

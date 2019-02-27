@@ -6,144 +6,333 @@ output: rmarkdown::html_vignette
 bibliography: topicmodelling.bibtex
 vignette: >
   %\VignetteIndexEntry{Introduction to topicanalysis}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Purpose
 
-Using topic models, a text mining technique originally developed for the purposes of information retrieval, has become a common technique in the social sciences [@Blätte2018]. The original algorithm, 'latent dirichlet allocation' (LDA) is the most commonly used topic model. Yet while there is a set of quantitative instruments to evaluate a topic model, there are not yet tools readily available for the qualitative evaluation of a topic model. The 'topicanalysis' package offers a workflow to integrate quantitative and qualitative analysis, and offers supplementary functionality.
+Using topic models, a text mining technique originally developed for the purposes of information retrieval, has become a common technique in the social sciences [@Blätte2018]. The original algorithm, 'latent dirichlet allocation' (LDA) remains to be the prevalent topic model. Yet while there is a set of quantitative instruments to evaluate a topic model, there are not yet tools readily available for the qualitative evaluation of a topic model. The *topicanalysis* package offers the building blocks to integrate quantitative and qualitative analysis, with a special concern for topic co-occurrences, and time series analysis.
+
+Packages that may supplement the approaches offered here are *stm* and *LDAvis*.
 
 
-## Installation
+## Getting Started
 
-At this stage, the package is only available at GitHub. The *devtools*-package offers a convenient function to install the package from GitHub.
+### Installation 
 
-```{r eval = FALSE}
-devtools::install_github("PolMine/topicanalysis")
+At this stage, the package is only available at GitHub. A CRAN release is not yet planned and/or scheduled. The *devtools*-package offers a convenient function to install the package from GitHub.
+
+```{r install_topicanalysis_package, eval = FALSE}
+devtools::install_github("PolMine/topicanalysis", build_opts = "--no-build-vignettes")
 ```
 
 
-## Loading the package
+### Loading the package
 
-```{r}
+Loading the package should not throw issues or warnings.
+
+```{r load_topicanalysis}
 library(topicanalysis)
 ```
 
-
-## Sample data
-
-The package includes a sample LDA topicmodel for Germany's regional parliaments in Berlin ("Berliner Abgeordnetenhaus") and the Saarland ("Landtag des Saarlands").
-
 ```{r}
+library(cwbtools) # available at www.github.com/PolMine/cwbtools
+library(polmineR) # CRAN, development version at www.github.com/PolMine/polmineR
+```
+
+In the following examples, we will need some further packages.
+
+```{r load_additional_packages}
+library(magrittr)
+library(xts, quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE) # plotting with nice time-series
+library(DT) # nice datatable output
+library(RColorBrewer) # nice colors
+library(igraph, quietly = TRUE, warn.conflicts = FALSE)
+library(data.table)
+```
+
+
+### Make Sample data Available
+
+The package includes a sample LDA topicmodel for Germany's regional parliament in Berlin ("Berliner Abgeordnetenhaus") and the Saarland ("Landtag des Saarlands").
+
+```{r show_data}
 data(package = "topicanalysis")
 ```
 
-[Lazy loading](https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Lazy-loading) of the data is delibarately not supported to keep the time to install the package minimal. If we want to use the LDA topic models shipped with the package, we need to activate the data expressively.
+[Lazy loading](https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Lazy-loading) of the data is delibarately not supported, to keep the time to install the package minimal. If we want to use the LDA topic models shipped with the package, we need to activate the data expressively.
 
 ```{r load_data}
 data(BE_lda)
 data(BE_labels)
 ```
 
+To inspect/read the full text documents, we need the corpus of the 'Berliner Abgeordnetenhaus' ("BE"). It is too large to be included in the *topicanalysis*-package. It is available for download from the PolMine server using the `corpus_install()`-function of the *cwbtools*-package.
 
-## The 'Topicanalysis' Class
+The `use()`-function of the *polmineR*-package activates corpora within the *topicanalysis*-package. If the BE corpus is not yet there, it is downloaded and put into the package.
 
 ```{r}
-BE <- Topicanalysis$new(topicmodel = BE_lda)
-BE$labels <- BE_labels
+use("topicanalysis")
+if (!"BE" %in% corpus()$corpus){
+  cwbtools::corpus_install(
+    pkg = "topicanalysis",
+    tarball = "http://polmine.sowi.uni-due.de/corpora/cwb/berlin/be.tar.gz"
+  )
+  use("topicanalysis") # to activate corpus 'BE'
+}
 ```
 
 
-### Time Series Analysis
+## Classes and Methods
 
-#### Using the `as.zoo()`-method
+### Generic Methods
 
-A worker method `as.zoo()` will get the number of occurrences of a topic among the top k topics within a given period (month, quarter, year).
+The package defines a `cooccurrences()`-method and `read()`-method, building on the original defintion in the *polmineR* package, and a `as.zoo()`-method, originally defined in the *zoo*-package.
 
-```{r}
-ts_zoo <- as.zoo(BE_lda, select = grep("Flucht", BE_labels), aggregation = "quarter")
+
+#### The `dotplot()`-method
+
+Inspecting the most likels terms for topics is a frequent first step to learn about the (potential) substantive meaning of topics.
+
+```{r dotplot_method, fig.width = 8, fig.height = 6}
+asylum_topic_no <- grep("Asyl", BE_labels)
+dotplot(BE_lda, topic = asylum_topic_no, n = 10L)
+```
+
+This function is very basic. See the *LDAvis* package for a nicer and more advanced tool to inspect the terms for topics.
+
+
+#### Time Series Analysis: The `as.zoo()`-method
+
+The `as.zoo()`-method will get the number of occurrences of a topic among the top k topics within a given period (month, quarter, year). The return value is a `zoo` object.
+
+```{r zoo_method}
+ts_zoo <- topicanalysis::as.zoo(
+  BE_lda,
+  select = grep("Flucht", BE_labels),
+  aggregation = "quarter" # can also be year, month
+)
 is(ts_zoo)
 ```
 
 The *zoo*-package offers a convenient plotting function for `zoo`-objects.
 
-```{r}
+```{r zoo_plotting, fig.width = 10, fig.height = 6}
 plot(ts_zoo)
 ```
 
 An alternative is to use the plotting capabilities of the *xts*-package.
 
-```{r}
-library(xts)
+```{r xts_plotting, fig.width = 10, fig.height = 6}
 ts_xts_by_qtr <- xts::as.xts(ts_zoo)
 plot(ts_xts_by_qtr)
 ```
 
 
-#### Topicanalysis class
+#### The `cooccurrences()`-method
 
-The `Topicanalysis` class has a method for extracting the time series information from the LDA object.
+A noteworthy feature of the topicmodelling technique is that documents are considered are represented as mixtures of topics. Documents do not fall exclusively in one unique category. Accordingly, the topics co-occur in documents, and it is possible to obtain cooccurrences for topics (cp Gregor Wiedemann). In the *topicanalysis*-package, a `cooccurrences()`-method implements this idea.
+
+```{r cooccurrences_method}
+dt <- cooccurrences(BE_lda, k = 3L, verbose = FALSE)
+head(dt)
+```
+
+The topicmodel has been labelled: We drop topics that do not refer to a substantive policy domain or issue, and we add the labels to the table.
+
+```{r cooc_table_minimize}
+topics_to_drop <- grep("^\\(.*?\\)$", BE_labels)
+dt_min <- dt[chisquare >= 10.83][!a %in% topics_to_drop][!b %in% topics_to_drop]
+DT::datatable(dt_min)
+```
+
+Let us pimp the table somewhat to have labels, not integer ids for topics.
+
+```{r cooc_table}
+dt_min[, "a_label" := BE_labels[ dt_min[["a"]] ] ]
+dt_min[, "b_label" := BE_labels[ dt_min[["b"]] ] ]
+dt_min[, "a" := NULL]
+dt_min[, "b" := NULL]
+dt_min[, "rank_chisquare" := NULL]
+setcolorder(dt_min, neworder = c("a_label", "b_label", "count_coi", "count_ref", "exp_coi", "chisquare"))
+DT::datatable(dt_min)
+```
+
+
+#### The `read()`-method
+
+Documents are mixtures of topics. Blei conveyed this idea in his classic article using a short text, highlighting with different colors the most likely terms for the topics present in this document.
+
+The result can be achieved using the `read()`-method, applied on a TopicModel class object.
 
 ```{r}
+p <- partition("BE", date = "2005-04-28", who = "Körting", verbose = FALSE)
+ek <- as.speeches(p, s_attribute_name = "who", verbose = FALSE)[[4]]
+```
+
+The `read()`-method is designed to be used in an interactive session.
+
+```{r read_method}
+if (interactive()) read(BE_lda, ek, no_token = 150)
+```
+
+To include a document into a Rmarkdown document (such as this vignette), we use the worker function `get_highlight_list()` and use the returned list as input for a combination of `html()` and `highlight()`.
+
+```{r show_, eval = TRUE}
+h <- get_highlight_list(BE_lda, partition_obj = ek, no_token = 150)
+html(p, height = "350px") %>%
+  highlight(highlight = h)
+```
+
+
+### The 'Topicanalysis' Class
+
+While it is possible to use the generics directly, a `Topicanalysis`-class combines different input values that a used recurringly. Apart from reducing the efforts for typing, the reference logic of the R6 class used avoids copying potentially large objects in memory again and again.
+
+
+#### Configuring the Topicanalysis class
+
+The first step when using the `Topicanalysis` class will be to create a new instance, and to fill fields.
+
+```{r initialize_topicanalysis}
+BE <- Topicanalysis$new(topicmodel = BE_lda)
+BE$labels <- BE_labels
+# BE$type <- "plpr_partition"
+BE$type <- "partition"
+```
+
+
+#### Wordcloud for likely terms
+
+The scientific value of wordclouds is disputable. Anyway, `wordcloud()`-method can be used to inspect the most likely terms for a topic.
+
+```{r wordcloud, fig.width = 8, fig.height = 8}
+term_colors <- RColorBrewer::brewer.pal(n = 8L, name = "Dark2")
+BE$wordcloud(n = 125L, n_words = 25, colors = term_colors)
+```
+
+
+#### Time Series Analysis
+
+The `Topicanalysis` class offers a method for extracting the time series information from the LDA object.
+
+```{r topicanalysis_zoo_method, fig.width = 10, fig.height = 6}
 z <- BE$as.zoo(x = 125, aggregation = "year")
+is(z)
+```
+
+Going beyond the plain `as.zoo()`-method, labels can be used.
+
+```{r zoo_plotting2, fig.width = 8, fig.height = 6}
 z <- BE$as.zoo(x = "Flucht, Asyl, vorläufiger Schutz", aggregation = "year")
 plot(z)
 ```
 
 
-## Miscellaneous
+#### Cooccurrences
 
-```{r, fig.width = 5}
-asylum_topic_no <- grep("Asyl", BE_labels)
-dotplot(BE_lda, topic = asylum_topic_no, n = 10L)
+```{r}
+dt <- BE$cooccurrences()
+# dt <- BE$cooccurrences(verbose = FALSE) # argument verbose not yet used
 ```
 
 
-### Wordcloud for topic vocabulary
+The table with co-occurrence data can be understood to include relational data. It can be parsed, processed and visualised accordingly using the *igraph* package.
 
-```{r}
-BE$wordcloud(
-  n = 125L, n_words = 25,
-  colors = RColorBrewer::brewer.pal(n = 9L, name = "Dark2")
+```{r get_igraph_data}
+dt_min <- dt[chisquare >= 10.83][!a %in% topics_to_drop][!b %in% topics_to_drop]
+g_data = data.frame(
+  from = dt_min[["a_label"]],
+  to = dt_min[["b_label"]],
+  n = dt_min[["count_coi"]],
+  stringsAsFactors = FALSE
+)
+g <- igraph::graph_from_data_frame(g_data, directed = TRUE)
+```
+
+At this stage, we have a directed graph, but logically this is not appropriate. We can simplify the graph by turning it into an undirected graph.
+
+```{r simplify_igraph}
+g <- igraph::as.undirected(g, mode = "collapse")
+g <- igraph::simplify(g, remove.loops = TRUE)
+```
+
+The plotting capabilities of the *igraph* package fall behind what other packages (such as DiagrammeR) have on offer. Anyway ...
+
+```{r plot_igraph, fig.width = 10, fig.height = 10}
+plot.igraph(
+  g, shape = "square", vertex.color = "steelblue",
+  label = V(g)$name, label.family = 11, label.cex = 0.5
 )
 ```
 
 
 ### Reading
 
-```{r, eval = TRUE, message = FALSE}
-BE$type <- "plpr_partition"
+The `read()`-generic method is re-used by the `Topicanalysis`-class and supplemented by additional functionality.
 
-topic_flucht <- 125L
-topic_integration <- 241
-docs <- BE$docs(x = 125L, y = 241L)
+A preliminary step to reading is knowing what you want to read. Let us assume that we want to inspect the documents that combine a reference to refugees and asylum, and on integration. First, we get the topic ids.
 
-library(polmineR)
-use("PopParl")
+```{r get_topics}
+topic_flucht <- grep("Flucht", BE_labels)
+topic_integration <- grep("Integration", BE_labels)
+```
 
-li <- lapply(
+We can then use the `$docs()`-method of the `Topicanalysis`-class to get the documents that combine these topics.
+
+```{r get_docs}
+docs <- BE$docs(x = topic_flucht, y = topic_integration)
+docs
+```
+
+The `Topicanalysis`-class has a field `bundle` for a `partition_bundle`. In "real" context, you would include a `partition_bundle` covering the whole corpus. Here, we are much more selective and generate a targetted `partition_bundle` with only those partitions we will want to have a look at. Note that we use regular expressions to extract the metadata (speaker name, date, speech number) from the document labels.
+
+```{r generate_bundle}
+BE$bundle <- as.partition_bundle(lapply(
   docs,
   function(doc){
-    as.speeches(
-      partition(
-        "BE",
-        who = gsub("^(.*?)_.*$", "\\1", doc),
-        date = gsub("^.*(\\d{4}-\\d{2}-\\d{2})_\\d+$", "\\1", doc)
-      ),
-      s_attribute_name = "who"
-    )[[as.integer(gsub("^.*?_(\\d+)$", "\\1", doc))]]
-})
-
-BE$bundle <- as.partition_bundle(li)
-p <- BE$bundle[[1]]
-h <- get_highlight_list(BE$topicmodel, partition_obj = p, no_token = 150)
-
-library(magrittr)
-html(p, height = "250px") %>% highlight(highlight = h)
-
+    who <- gsub("^(.*?)_.*$", "\\1", doc)
+    date <- gsub("^.*(\\d{4}-\\d{2}-\\d{2})_\\d+$", "\\1", doc)
+    no <- as.integer(gsub("^.*?_(\\d+)$", "\\1", doc))
+    p <- partition("BE", who = who, date = date, verbose = FALSE)
+    pb <- as.speeches(p, s_attribute_name = "who", verbose = FALSE, progress = FALSE)
+    pb[[no]]
+}))
 ```
+
+Now we inspect a document.
+
+```{r read_doc, eval = FALSE}
+BE$read(docs[1], n = 3L, no_token = 100)
+```
+
+You can also put this into a loop. For instancde, to make informed judgements whether the content of a document meets expectations, or not. Not that the output generated by calling the `$read()`-method needs to be wrapped into a call to `show()` explicitly in a loop.
+
+```{r loop_documents, eval = FALSE}
+labels <- logical(length = length(docs))
+for (i in seq_along(docs)){
+  fulltext <- BE$read(docs[i], n = 3L, no_token = 100)
+  show(fulltext)
+  userinput <- menu(choices = c(TRUE, FALSE))
+  if (userinput == 0L) break else labels[i] <- c(TRUE, FALSE)[userinput]
+}
+```
+
+Again, the workflow is somewhat different if we want to include the fulltext output in a Rmarkdown document.
+
+```{r show_document_1}
+h <- get_highlight_list(BE$topicmodel, partition_obj = BE$bundle[[1]], no_token = 150)
+html(BE$bundle[[1]], height = "350px") %>% highlight(highlight = h)
+```
+
+```{r show_document_2}
+h <- get_highlight_list(BE$topicmodel, partition_obj = BE$bundle[[2]], no_token = 150)
+html(BE$bundle[[2]], height = "350px") %>% highlight(highlight = h)
+```
+
 
 ## References 
 

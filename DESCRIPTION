@@ -29,7 +29,10 @@ Suggests:
   knitr,
   igraph,
   xts,
-  RColorBrewer
+  RColorBrewer,
+  DT,
+  cwbtools,
+  magrittr
 LazyData: false
 License: GPL-3
 VignetteBuilder: knitr

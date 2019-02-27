@@ -64,6 +64,7 @@
 #'   \item{\code{$compare(x, ...)}}{Compare the similarity of two topicmodels.}
 #'   \item{\code{$find_topics(x, n = 100, word2vec = NULL)}}{Find a topic.}
 #' }
+#' @importFrom polmineR as.speeches
 #' @examples
 #' data(BE_lda)
 #' data(BE_labels)
@@ -117,11 +118,12 @@
 #' BE$docs(x = 125L)
 #' docs <- BE$docs(x = 125L, y = 241L)
 #' 
+#' \dontrun{
 #' li <- lapply(
 #'   docs, 
 #'   function(doc){
-#'     as.speeches(
-#'       partition(
+#'     polmineR::as.speeches(
+#'       polmineR::partition(
 #'         "BE",
 #'         who = gsub("^(.*?)_.*$", "\\1", doc),
 #'         date = gsub("^.*(\\d{4}-\\d{2}-\\d{2})_\\d+$", "\\1", doc)
@@ -139,6 +141,7 @@
 #'   p <- BE$bundle[[doc]]
 #'   read(BE$topicmodel, p, n = 3L, no_token = 250)
 #'   readline(prompt = "Hit any key to continue.")
+#' }
 #' }
 #' 
 #' #############################
