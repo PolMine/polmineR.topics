@@ -9,20 +9,20 @@ vignette: >
 params:
   package: "polmineR"
   corpus: "GERMAPARLMINI"
-  no_cores: 250
+  k: 250
+  language: "de"
 ---
 
-# Das Skript soll von dem Verzeichnis aus aufgerufen werden,
-# in welches die Ergebnisse geschrieben werden.
-# Aufruf zum Beispiel mit:
-# Rscript topicmodelling.R --args ParlSpeech BUNDESTAG 250 en
+```{sh command_line_use, eval = FALSE}
+Rscript -e 'rmarkdown::render(input = "01_CWBToLDA.Rmd", output_format = "html_document", output_file = "lda_reports/cwb_to_lda_germaparlmini.html", params = list(package = "GermaParl", corpus = "GERMAPARLMINI", k = 250, language = "de"))'
+```
+
 
 ````{r}
-args <- commandArgs(trailingOnly = TRUE)
-package_to_use <- args[2]
-corpus <- toupper(args[3])
-k <- as.integer(args[4])
-language <- args[5]
+package_to_use <- params$package
+corpus <- toupper(params$corpus)
+k <- as.integer(params$k)
+language <- params$language
 ```
 
 ```{r}
@@ -30,7 +30,19 @@ message(sprintf("Package to use: %s", package_to_use))
 message(sprintf("Corpus to use: %s", corpus))
 message(sprintf("Number of topics (k): %s", k))
 
-lda_filename <- sprintf("./lda_%s_%s.Rdata", corpus, k)
+get_corpus_build_date <- function(package, corpus) {
+  firstline <- readLines(paste0(system.file(package = package, "extData", "cwb", "indexed_corpora", tolower(corpus)), "/info.md"))[1]
+  date <- gsub(".*build (.*?)\\)", "\\1", firstline)
+  date <- as.Date(date)
+  return(date)
+}
+
+corpus_build_date <- get_corpus_build_date(package = package_to_use, corpus = corpus)
+if (!inherits(corpus_build_date, "Date")) corpus_build_date <- "YYYY-MM-DD"
+
+lda_filename <- sprintf("lda_%s_%s_%s_%s.rds", corpus, corpus_build_date, k, Sys.Date())
+
+
 message("LDA model will be written to: ", lda_filename)
 ```
 
@@ -48,6 +60,25 @@ library(topicmodels)
 
 ```{r}
 use(package_to_use)
+```
+
+# Preventing Encoding Issues
+
+```{r}
+
+if (.Platform$OS.type == "unix" && polmineR::registry_get_encoding(corpus) == "latin1") {
+  
+  cwbtools::corpus_recode(corpus = corpus, 
+                          registry_dir = system.file(package = package, "extdata", "cwb", "registry"),
+                          data_dir = system.file(package = package, "extdata", 
+                                                 "cwb", "indexed_corpora", tolower(corpus)),
+                          to = "utf8")
+  
+  RcppCWB::cqp_reset_registry()
+  use(package)
+
+}
+
 ```
 
 # Get going
@@ -81,7 +112,7 @@ noise_to_drop[["stopwords"]] <- c(
   )
 )
 
-dtm <- dtm[,-which(unique(unlist(noise_to_drop)) %in% colnames(dtm))]
+dtm <- dtm[,-which(colnames(dtm) %in% unique(unname(unlist(noise_to_drop))))]
 
 # remove rare words
 terms_to_drop_rare <- which(slam::col_sums(dtm) <= 10)
@@ -102,5 +133,3 @@ lda <- LDA(
 ```{r}
 saveRDS(object = lda, file = lda_filename)
 ```
-
-
