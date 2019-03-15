@@ -31,7 +31,7 @@ message(sprintf("Corpus to use: %s", corpus))
 message(sprintf("Number of topics (k): %s", k))
 
 get_corpus_build_date <- function(package, corpus) {
-  firstline <- readLines(paste0(system.file(package = package, "extData", "cwb", "indexed_corpora", tolower(corpus)), "/info.md"))[1]
+  firstline <- readLines(paste0(system.file(package = package, "extdata", "cwb", "indexed_corpora", tolower(corpus)), "/info.md"))[1]
   date <- gsub(".*build (.*?)\\)", "\\1", firstline)
   date <- as.Date(date)
   return(date)
