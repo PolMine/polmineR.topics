@@ -69,13 +69,13 @@ use(package_to_use)
 if (.Platform$OS.type == "unix" && polmineR::registry_get_encoding(corpus) == "latin1") {
   
   cwbtools::corpus_recode(corpus = corpus, 
-                          registry_dir = system.file(package = package, "extdata", "cwb", "registry"),
-                          data_dir = system.file(package = package, "extdata", 
+                          registry_dir = system.file(package = package_to_use, "extdata", "cwb", "registry"),
+                          data_dir = system.file(package = package_to_use, "extdata", 
                                                  "cwb", "indexed_corpora", tolower(corpus)),
                           to = "utf8")
   
   RcppCWB::cqp_reset_registry()
-  use(package)
+  use(package_to_use)
 
 }
 
@@ -84,8 +84,8 @@ if (.Platform$OS.type == "unix" && polmineR::registry_get_encoding(corpus) == "l
 # Get going
 
 ```{r}
-speeches <- as.speeches(.Object = corpus, sAttributeDates = "date", sAttributeNames = "name")
-count_bundle <- count(speeches, pAttribute = "word", verbose = TRUE)
+speeches <- as.speeches(.Object = corpus, s_attribute_date = "date", s_attribute_name = "name")
+count_bundle <- count(speeches, p_attribute = "word", verbose = TRUE)
 rm(speeches)
 ```
 
@@ -93,7 +93,7 @@ rm(speeches)
 message("... create DocumentTermMatrix")
 
 # Create DocumentTermMatrix
-dtm <- as.DocumentTermMatrix(count_bundle, pAttribute = "word", col = "count")
+dtm <- as.DocumentTermMatrix(count_bundle, p_attribute = "word", col = "count")
 ```
 
 ```{r}
