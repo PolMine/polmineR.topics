@@ -65,7 +65,9 @@ setMethod("as.zoo", "LDA", function(
   date_vector <- as.Date(gsub(regex, "\\1", x@documents), format = "%Y-%m-%d")
   topic_matrix <- topics(x, k = k)
   if (length(select) <= 1L){
-    top_topics_by_date <- split(topic_matrix, date_vector)
+    topic_dt <- data.table(topic_matrix)
+    top_topics_by_date <- split(t(topic_dt), date_vector)
+    # top_topics_by_date <- split(topic_matrix, date_vector)
     tabled <- lapply(top_topics_by_date, table)
     dt_ext <- data.table(
       date = as.Date(unlist(lapply(names(tabled), function(x) rep(x, times = length(tabled[[x]]))))),

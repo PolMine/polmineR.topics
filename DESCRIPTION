@@ -1,8 +1,8 @@
 Package: topicanalysis
 Type: Package
 Title: tools for topicmodelling
-Version: 0.1.12
-Date: 2019-02-06
+Version: 0.1.13
+Date: 2019-15-03
 Author: Andreas Blaette
 Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
 Description: Auxiliary functions for topicmodelling.
