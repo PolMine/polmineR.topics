@@ -1,0 +1,86 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+## polmineR and gensim
+
+I used [this](https://www.machinelearningplus.com/nlp/topic-modeling-gensim-python/) website as an introduction to gensim and to understand the data structure.
+
+```{r}
+library(reticulate)
+library(polmineR)
+```
+
+
+```{r}
+gensim <- import("gensim")
+```
+
+
+## The polmineR part
+
+```{r}
+dtm <- corpus("GERMAPARLMINI") %>%
+  as.speeches(s_attribute_name = "speaker") %>%
+  as.DocumentTermMatrix(p_attribute = "word")
+```
+
+
+## Preparing the corpus object
+
+We need a list of list with tuples inside ... 
+
+```{r}
+dtm$j <- dtm$j - 1L # word ids are zero-indexed in python / gensim
+dtm_2 <- lapply(
+  split(x = matrix(c(dtm$j, dtm$v), ncol = 2), f = dtm$i),
+  function(x){
+    m <- matrix(x, ncol = 2)
+    lapply(1L:nrow(m), function(i) tuple(m[i,1], m[i,2]))
+  }
+)
+names(dtm_2) <- NULL
+
+corpus <- r_to_py(dtm_2)
+``` 
+
+
+## Preparing the dictionary
+
+```{r}
+Encoding(dtm$dimnames$Terms) <- "UTF-8"
+```
+
+Understanding the Python data structur of the Dictionary class took a moment - but this works ...
+
+```{r}
+di <- list(
+  token2id = as.list(setNames(0L:length(dtm$dimnames$Terms), dtm$dimnames$Terms)),
+  id2token = list(),
+  cfs = list(),
+  dfs = list(),
+  num_docs = 0L,
+  num_pos = 0L,
+  num_nnz = 0L
+)
+vocab <- r_to_py(di)
+dict <- gensim$corpora$dictionary$Dictionary()
+py_set_attr(dict, "__dict__", vocab)
+```
+
+And now we can run the gensim topicmodelling engine.
+
+```{r}
+lda_model <- gensim$models$ldamodel$LdaModel(corpus = corpus,
+                                            id2word = dict,
+                                            num_topics = 20L, 
+                                            random_state = 100L,
+                                            update_every = 1L,
+                                            chunksize = 100L,
+                                            passes = 10L,
+                                            alpha = "auto",
+                                            per_word_topics = TRUE)
+
+```
+
