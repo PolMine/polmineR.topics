@@ -370,14 +370,18 @@ summary {
 <h2>polmineR and gensim</h2>
 <p>I used <a href="https://www.machinelearningplus.com/nlp/topic-modeling-gensim-python/">this</a> website as an introduction to gensim and to understand the data structure.</p>
 <pre class="r"><code>library(reticulate)
-library(polmineR)</code></pre>
+library(polmineR)
+library(pbapply)</code></pre>
 <pre class="r"><code>gensim &lt;- import(&quot;gensim&quot;)</code></pre>
+<pre class="r"><code>use(&quot;GermaParl&quot;)</code></pre>
+<pre><code>## ... activating corpus: GERMAPARL</code></pre>
+<pre><code>## ... activating corpus: GERMAPARLMINI</code></pre>
 </div>
 <div id="the-polminer-part" class="section level2">
 <h2>The polmineR part</h2>
-<pre class="r"><code>dtm &lt;- corpus(&quot;GERMAPARLMINI&quot;) %&gt;%
+<pre class="r"><code>tdm &lt;- corpus(&quot;GERMAPARL&quot;) %&gt;%
   as.speeches(s_attribute_name = &quot;speaker&quot;) %&gt;%
-  as.DocumentTermMatrix(p_attribute = &quot;word&quot;)</code></pre>
+  as.TermDocumentMatrix(p_attribute = &quot;word&quot;)</code></pre>
 <pre><code>## ... generating corpus positions</code></pre>
 <pre><code>## ... getting ids</code></pre>
 <pre><code>## ... performing count</code></pre>
@@ -387,36 +391,193 @@ library(polmineR)</code></pre>
 <div id="preparing-the-corpus-object" class="section level2">
 <h2>Preparing the corpus object</h2>
 <p>We need a list of list with tuples inside …</p>
-<pre class="r"><code>dtm$j &lt;- dtm$j - 1L # word ids are zero-indexed in python / gensim
-dtm_2 &lt;- lapply(
-  split(x = matrix(c(dtm$j, dtm$v), ncol = 2), f = dtm$i),
-  function(x){
-    m &lt;- matrix(x, ncol = 2)
-    lapply(1L:nrow(m), function(i) tuple(m[i,1], m[i,2]))
-  }
-)
-names(dtm_2) &lt;- NULL
-
-corpus &lt;- r_to_py(dtm_2)</code></pre>
+<pre class="r"><code>tdm$i &lt;- tdm$i - 1L
+py$i &lt;- r_to_py(unname(split(x = tdm$i, f = tdm$j)), convert = TRUE)
+py$v &lt;- r_to_py(unname(split(x = tdm$v, f = tdm$j)), convert = TRUE)
+py_run_string(&quot;corpus = [zip(i[x],v[x]) for x in range(len(i))]&quot;)</code></pre>
 </div>
 <div id="preparing-the-dictionary" class="section level2">
 <h2>Preparing the dictionary</h2>
-<pre class="r"><code>Encoding(dtm$dimnames$Terms) &lt;- &quot;UTF-8&quot;</code></pre>
-<p>Understanding the Python data structur of the Dictionary class took a moment - but this works …</p>
-<pre class="r"><code>di &lt;- list(
-  token2id = as.list(setNames(0L:length(dtm$dimnames$Terms), dtm$dimnames$Terms)),
-  id2token = list(),
-  cfs = list(),
-  dfs = list(),
-  num_docs = 0L,
-  num_pos = 0L,
-  num_nnz = 0L
-)
-vocab &lt;- r_to_py(di)
-dict &lt;- gensim$corpora$dictionary$Dictionary()
-py_set_attr(dict, &quot;__dict__&quot;, vocab)</code></pre>
+<pre class="r"><code>Encoding(tdm$dimnames$Terms) &lt;- &quot;UTF-8&quot;
+py$terms &lt;- tdm$dimnames$Terms
+py_run_string(&quot;token2id = dict(zip(terms, range(len(terms))))&quot;)
+py$dictionary &lt;- gensim$corpora$dictionary$Dictionary()
+py_run_string(&quot;dictionary.__dict__[&#39;token2id&#39;] = token2id&quot;)</code></pre>
 <p>And now we can run the gensim topicmodelling engine.</p>
-<pre class="r"><code>lda_model &lt;- gensim$models$ldamodel$LdaModel(corpus = corpus,
+<pre class="r"><code>started &lt;- Sys.time()
+lda_model &lt;- gensim$models$ldamodel$LdaModel(corpus = py$corpus,
+                                            id2word = py$dictionary,
+                                            num_topics = 25L, 
+                                            random_state = 100L,
+                                            update_every = 1L,
+                                            chunksize = 100L,
+                                            passes = 10L,
+                                            alpha = &quot;auto&quot;,
+                                            per_word_topics = TRUE)
+
+finished &lt;- Sys.time()
+print(finished - started)</code></pre>
+<pre><code>## Time difference of 12.47563 hours</code></pre>
+<pre class="r"><code>lda_model$print_topics()</code></pre>
+<pre><code>## [[1]]
+## [[1]][[1]]
+## [1] 8
+## 
+## [[1]][[2]]
+## [1] &quot;0.000*\&quot;Ahlhaus\&quot; + 0.000*\&quot;Fact-finding-Mission\&quot; + 0.000*\&quot;96/04\&quot; + 0.000*\&quot;Rücknahmeurteile\&quot; + 0.000*\&quot;Staatsangehörigkeitrechts\&quot; + 0.000*\&quot;Verschärfungsvorschläge\&quot; + 0.000*\&quot;Widerrufbzw\&quot; + 0.000*\&quot;Rücknahmeverfahren\&quot; + 0.000*\&quot;Asylgrundrechts\&quot; + 0.000*\&quot;16/2650\&quot;&quot;
+## 
+## 
+## [[2]]
+## [[2]][[1]]
+## [1] 3
+## 
+## [[2]][[2]]
+## [1] &quot;0.121*\&quot;Art.\&quot; + 0.097*\&quot;Grundgesetzes\&quot; + 0.058*\&quot;Grundgesetz\&quot; + 0.047*\&quot;Verfassung\&quot; + 0.023*\&quot;Bundesverfassungsgericht\&quot; + 0.020*\&quot;Buch\&quot; + 0.013*\&quot;üben\&quot; + 0.010*\&quot;Artikel\&quot; + 0.010*\&quot;Volkes\&quot; + 0.005*\&quot;Petitionsausschuss\&quot;&quot;
+## 
+## 
+## [[3]]
+## [[3]][[1]]
+## [1] 9
+## 
+## [[3]][[2]]
+## [1] &quot;0.115*\&quot;Heinrich\&quot; + 0.084*\&quot;Kolb\&quot; + 0.078*\&quot;Dirk\&quot; + 0.067*\&quot;L.\&quot; + 0.066*\&quot;Niebel\&quot; + 0.044*\&quot;Weiß\&quot; + 0.038*\&quot;Johannes\&quot; + 0.035*\&quot;Brandner\&quot; + 0.034*\&quot;Singhammer\&quot; + 0.033*\&quot;Birgit\&quot;&quot;
+## 
+## 
+## [[4]]
+## [[4]][[1]]
+## [1] 2
+## 
+## [[4]][[2]]
+## [1] &quot;0.108*\&quot;Steffen\&quot; + 0.104*\&quot;Hans\&quot; + 0.047*\&quot;Kampeter\&quot; + 0.036*\&quot;Medikamente\&quot; + 0.027*\&quot;Glos\&quot; + 0.027*\&quot;Austermann\&quot; + 0.026*\&quot;Merz\&quot; + 0.022*\&quot;Eichel\&quot; + 0.021*\&quot;Steuerreform\&quot; + 0.016*\&quot;Ökosteuer\&quot;&quot;
+## 
+## 
+## [[5]]
+## [[5]][[1]]
+## [1] 13
+## 
+## [[5]][[2]]
+## [1] &quot;0.060*\&quot;Arbeit\&quot; + 0.056*\&quot;Arbeitsmarkt\&quot; + 0.040*\&quot;Arbeitnehmer\&quot; + 0.033*\&quot;Arbeitslosigkeit\&quot; + 0.029*\&quot;Beschäftigung\&quot; + 0.023*\&quot;Arbeitsplätze\&quot; + 0.022*\&quot;Unternehmen\&quot; + 0.020*\&quot;Minijobs\&quot; + 0.020*\&quot;Beschäftigten\&quot; + 0.017*\&quot;Arbeitnehmerinnen\&quot;&quot;
+## 
+## 
+## [[6]]
+## [[6]][[1]]
+## [1] 21
+## 
+## [[6]][[2]]
+## [1] &quot;0.040*\&quot;Nachfrage\&quot; + 0.039*\&quot;Ute\&quot; + 0.035*\&quot;gegen\&quot; + 0.030*\&quot;Polizei\&quot; + 0.029*\&quot;Gewalt\&quot; + 0.021*\&quot;__UNDEF__\&quot; + 0.017*\&quot;Wieland\&quot; + 0.016*\&quot;Volk\&quot; + 0.016*\&quot;Rechtsstaat\&quot; + 0.016*\&quot;Innenminister\&quot;&quot;
+## 
+## 
+## [[7]]
+## [[7]][[1]]
+## [1] 5
+## 
+## [[7]][[2]]
+## [1] &quot;0.029*\&quot;Bayern\&quot; + 0.027*\&quot;BGB\&quot; + 0.025*\&quot;Bundesländern\&quot; + 0.022*\&quot;Sachsen\&quot; + 0.021*\&quot;Brandenburg\&quot; + 0.018*\&quot;Bundesländer\&quot; + 0.013*\&quot;Schüler\&quot; + 0.011*\&quot;Baden-Württemberg\&quot; + 0.011*\&quot;Sachsen-Anhalt\&quot; + 0.011*\&quot;Thüringen\&quot;&quot;
+## 
+## 
+## [[8]]
+## [[8]][[1]]
+## [1] 10
+## 
+## [[8]][[2]]
+## [1] &quot;0.247*\&quot;daß\&quot; + 0.131*\&quot;F.D.P.\&quot; + 0.055*\&quot;muß\&quot; + 0.046*\&quot;DM\&quot; + 0.045*\&quot;PDS\&quot; + 0.022*\&quot;Angelika\&quot; + 0.012*\&quot;Rudolf\&quot; + 0.011*\&quot;Fischer\&quot; + 0.011*\&quot;Geis\&quot; + 0.009*\&quot;1997\&quot;&quot;
+## 
+## 
+## [[9]]
+## [[9]][[1]]
+## [1] 12
+## 
+## [[9]][[2]]
+## [1] &quot;0.789*\&quot;&#39;&#39;\&quot; + 0.043*\&quot;``\&quot; + 0.031*\&quot;-\&quot; + 0.007*\&quot;dem\&quot; + 0.006*\&quot;mit\&quot; + 0.006*\&quot;Die\&quot; + 0.005*\&quot;der\&quot; + 0.004*\&quot;von\&quot; + 0.004*\&quot;auf\&quot; + 0.002*\&quot;unter\&quot;&quot;
+## 
+## 
+## [[10]]
+## [[10]][[1]]
+## [1] 20
+## 
+## [[10]][[2]]
+## [1] &quot;0.035*\&quot;Patienten\&quot; + 0.022*\&quot;Jens\&quot; + 0.019*\&quot;Thomae\&quot; + 0.017*\&quot;Rente\&quot; + 0.017*\&quot;Ingrid\&quot; + 0.017*\&quot;Andrea\&quot; + 0.017*\&quot;gesetzlichen\&quot; + 0.017*\&quot;Leistungen\&quot; + 0.016*\&quot;Versorgung\&quot; + 0.016*\&quot;Versicherten\&quot;&quot;
+## 
+## 
+## [[11]]
+## [[11]][[1]]
+## [1] 6
+## 
+## [[11]][[2]]
+## [1] &quot;0.143*\&quot;GRÜNEN\&quot; + 0.133*\&quot;90/DIE\&quot; + 0.115*\&quot;BÜNDNIS\&quot; + 0.051*\&quot;)\&quot; + 0.051*\&quot;(\&quot; + 0.050*\&quot;beim\&quot; + 0.047*\&quot;Beifall\&quot; + 0.045*\&quot;sowie\&quot; + 0.044*\&quot;Abgeordneten\&quot; + 0.039*\&quot;bei\&quot;&quot;
+## 
+## 
+## [[12]]
+## [[12]][[1]]
+## [1] 19
+## 
+## [[12]][[2]]
+## [1] &quot;0.178*\&quot;Dr.\&quot; + 0.102*\&quot;)\&quot; + 0.101*\&quot;(\&quot; + 0.026*\&quot;Michael\&quot; + 0.022*\&quot;Peter\&quot; + 0.020*\&quot;Wolfgang\&quot; + 0.017*\&quot;Thomas\&quot; + 0.014*\&quot;Klaus\&quot; + 0.011*\&quot;Dieter\&quot; + 0.010*\&quot;von\&quot;&quot;
+## 
+## 
+## [[13]]
+## [[13]][[1]]
+## [1] 11
+## 
+## [[13]][[2]]
+## [1] &quot;0.547*\&quot;-\&quot; + 0.030*\&quot;FDP\&quot; + 0.024*\&quot;/\&quot; + 0.012*\&quot;Landwirtschaft\&quot; + 0.011*\&quot;CDU\&quot; + 0.011*\&quot;Entschließungsantrag\&quot; + 0.011*\&quot;90\&quot; + 0.010*\&quot;Ernährung\&quot; + 0.008*\&quot;Jugend\&quot; + 0.008*\&quot;Jörg\&quot;&quot;
+## 
+## 
+## [[14]]
+## [[14]][[1]]
+## [1] 17
+## 
+## [[14]][[2]]
+## [1] &quot;0.070*\&quot;.\&quot; + 0.049*\&quot;die\&quot; + 0.047*\&quot;der\&quot; + 0.046*\&quot;,\&quot; + 0.044*\&quot;und\&quot; + 0.026*\&quot;in\&quot; + 0.020*\&quot;den\&quot; + 0.017*\&quot;wir\&quot; + 0.016*\&quot;für\&quot; + 0.013*\&quot;Wir\&quot;&quot;
+## 
+## 
+## [[15]]
+## [[15]][[1]]
+## [1] 15
+## 
+## [[15]][[2]]
+## [1] &quot;0.097*\&quot;Wort\&quot; + 0.087*\&quot;.\&quot; + 0.074*\&quot;der\&quot; + 0.061*\&quot;bei\&quot; + 0.056*\&quot;Beifall\&quot; + 0.053*\&quot;hat\&quot; + 0.052*\&quot;nun\&quot; + 0.051*\&quot;Das\&quot; + 0.049*\&quot;(\&quot; + 0.049*\&quot;)\&quot;&quot;
+## 
+## 
+## [[16]]
+## [[16]][[1]]
+## [1] 7
+## 
+## [[16]][[2]]
+## [1] &quot;0.047*\&quot;:\&quot; + 0.047*\&quot;der\&quot; + 0.045*\&quot;!\&quot; + 0.045*\&quot;(\&quot; + 0.045*\&quot;)\&quot; + 0.044*\&quot;Sie\&quot; + 0.043*\&quot;.\&quot; + 0.038*\&quot;]\&quot; + 0.038*\&quot;[\&quot; + 0.023*\&quot;bei\&quot;&quot;
+## 
+## 
+## [[17]]
+## [[17]][[1]]
+## [1] 16
+## 
+## [[17]][[2]]
+## [1] &quot;0.074*\&quot;der\&quot; + 0.062*\&quot;und\&quot; + 0.058*\&quot;,\&quot; + 0.046*\&quot;.\&quot; + 0.028*\&quot;die\&quot; + 0.026*\&quot;in\&quot; + 0.017*\&quot;bei\&quot; + 0.014*\&quot;zu\&quot; + 0.014*\&quot;des\&quot; + 0.013*\&quot;den\&quot;&quot;
+## 
+## 
+## [[18]]
+## [[18]][[1]]
+## [1] 1
+## 
+## [[18]][[2]]
+## [1] &quot;0.063*\&quot;.\&quot; + 0.053*\&quot;,\&quot; + 0.044*\&quot;der\&quot; + 0.044*\&quot;die\&quot; + 0.024*\&quot;und\&quot; + 0.017*\&quot;von\&quot; + 0.015*\&quot;zu\&quot; + 0.014*\&quot;nicht\&quot; + 0.014*\&quot;werden\&quot; + 0.014*\&quot;in\&quot;&quot;
+## 
+## 
+## [[19]]
+## [[19]][[1]]
+## [1] 14
+## 
+## [[19]][[2]]
+## [1] &quot;0.092*\&quot;,\&quot; + 0.065*\&quot;Sie\&quot; + 0.052*\&quot;?\&quot; + 0.051*\&quot;.\&quot; + 0.028*\&quot;die\&quot; + 0.028*\&quot;Herr\&quot; + 0.024*\&quot;der\&quot; + 0.023*\&quot;eine\&quot; + 0.023*\&quot;Kollege\&quot; + 0.023*\&quot;des\&quot;&quot;
+## 
+## 
+## [[20]]
+## [[20]][[1]]
+## [1] 23
+## 
+## [[20]][[2]]
+## [1] &quot;0.112*\&quot;,\&quot; + 0.053*\&quot;.\&quot; + 0.025*\&quot;die\&quot; + 0.022*\&quot;nicht\&quot; + 0.021*\&quot;das\&quot; + 0.021*\&quot;wir\&quot; + 0.020*\&quot;ist\&quot; + 0.020*\&quot;dass\&quot; + 0.017*\&quot;es\&quot; + 0.016*\&quot;in\&quot;&quot;</code></pre>
+<pre class="r"><code>lda_model &lt;- gensim$models$ldamulticore$LdaMulticore(corpus = corpus,
                                             id2word = dict,
                                             num_topics = 20L, 
                                             random_state = 100L,
@@ -424,7 +585,9 @@ py_set_attr(dict, &quot;__dict__&quot;, vocab)</code></pre>
                                             chunksize = 100L,
                                             passes = 10L,
                                             alpha = &quot;auto&quot;,
-                                            per_word_topics = TRUE)</code></pre>
+                                            per_word_topics = TRUE,
+                                            workers = 5
+                                            )</code></pre>
 </div>
 
 
