@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<meta name="date" content="2019-10-21" />
+
+<title>Compute gensim topic model</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Compute gensim topic model</h1>
+<h4 class="date">2019-10-21</h4>
+
+
+
+<div id="background" class="section level2">
+<h2>Background</h2>
+<p>I used <a href="https://www.machinelearningplus.com/nlp/topic-modeling-gensim-python/">this</a> website as an introduction to gensim and to understand the data structure.</p>
+</div>
+<div id="preparing-python" class="section level2">
+<h2>Preparing Python</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">library</span>(reticulate)</a>
+<a class="sourceLine" id="cb1-2" title="2">gensim &lt;-<span class="st"> </span><span class="kw">import</span>(<span class="st">&quot;gensim&quot;</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3">threads &lt;-<span class="st"> </span>parallel<span class="op">::</span><span class="kw">detectCores</span>() <span class="op">-</span><span class="st"> </span>1L</a></code></pre></div>
+</div>
+<div id="preparing-r" class="section level2">
+<h2>Preparing R</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">library</span>(polmineR)</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">use</span>(<span class="st">&quot;GermaParl&quot;</span>)</a>
+<a class="sourceLine" id="cb2-3" title="3">coi &lt;-<span class="st"> &quot;GERMAPARLMINI&quot;</span> <span class="co"># corpus of interest</span></a>
+<a class="sourceLine" id="cb2-4" title="4">language &lt;-<span class="st"> &quot;german&quot;</span></a></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">library</span>(slam)</a></code></pre></div>
+<pre><code>## 
+## Attaching package: &#39;slam&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:polmineR&#39;:
+## 
+##     as.simple_triplet_matrix</code></pre>
+</div>
+<div id="data-preparation-and-preprocessing-with-r" class="section level2">
+<h2>Data preparation and preprocessing with R</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" title="1">dtm &lt;-<span class="st"> </span><span class="kw">corpus</span>(coi) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb6-2" title="2"><span class="st">  </span><span class="kw">as.speeches</span>(<span class="dt">s_attribute_name =</span> <span class="st">&quot;speaker&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb6-3" title="3"><span class="st">  </span><span class="kw">as.DocumentTermMatrix</span>(<span class="dt">p_attribute =</span> <span class="st">&quot;word&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">dim</span>(dtm)</a></code></pre></div>
+<pre><code>## [1]   276 18148</code></pre>
+<p>Computing the topic models will be much faster if we remove common and noisy words. The following code block is taken from the template for LDA topic models using the R topicmodels package.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" title="1"><span class="co"># minimum document length 100 words</span></a>
+<a class="sourceLine" id="cb9-2" title="2">docs_to_drop_length &lt;-<span class="st"> </span><span class="kw">which</span>(slam<span class="op">::</span><span class="kw">row_sums</span>(dtm) <span class="op">&lt;</span><span class="st"> </span>100L) <span class="co"># less than 100</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="cf">if</span> (<span class="kw">length</span>(docs_to_drop_length) <span class="op">&gt;</span><span class="st"> </span>0L) dtm &lt;-<span class="st"> </span>dtm[<span class="op">-</span>docs_to_drop_length,]</a>
+<a class="sourceLine" id="cb9-4" title="4"></a>
+<a class="sourceLine" id="cb9-5" title="5"><span class="co"># remove noisy words</span></a>
+<a class="sourceLine" id="cb9-6" title="6">noise_to_drop &lt;-<span class="st"> </span><span class="kw">noise</span>(<span class="kw">colnames</span>(dtm), <span class="dt">specialChars =</span> <span class="ot">NULL</span>, <span class="dt">stopwordsLanguage =</span> language)</a>
+<a class="sourceLine" id="cb9-7" title="7">noise_to_drop[[<span class="st">&quot;stopwords&quot;</span>]] &lt;-<span class="st"> </span><span class="kw">c</span>(</a>
+<a class="sourceLine" id="cb9-8" title="8">  noise_to_drop[[<span class="st">&quot;stopwords&quot;</span>]],</a>
+<a class="sourceLine" id="cb9-9" title="9">  <span class="kw">paste</span>(</a>
+<a class="sourceLine" id="cb9-10" title="10">    <span class="kw">toupper</span>(<span class="kw">substr</span>(noise_to_drop[[<span class="st">&quot;stopwords&quot;</span>]], <span class="dv">1</span>, <span class="dv">1</span>)),</a>
+<a class="sourceLine" id="cb9-11" title="11">    <span class="kw">substr</span>(noise_to_drop[[<span class="st">&quot;stopwords&quot;</span>]], <span class="dv">2</span>, <span class="kw">nchar</span>(noise_to_drop[[<span class="st">&quot;stopwords&quot;</span>]])),</a>
+<a class="sourceLine" id="cb9-12" title="12">    <span class="dt">sep =</span> <span class="st">&quot;&quot;</span></a>
+<a class="sourceLine" id="cb9-13" title="13">  )</a>
+<a class="sourceLine" id="cb9-14" title="14">)</a>
+<a class="sourceLine" id="cb9-15" title="15"></a>
+<a class="sourceLine" id="cb9-16" title="16">dtm &lt;-<span class="st"> </span>dtm[,<span class="op">-</span><span class="kw">which</span>(<span class="kw">colnames</span>(dtm) <span class="op">%in%</span><span class="st"> </span><span class="kw">unique</span>(<span class="kw">unlist</span>(noise_to_drop)))]</a>
+<a class="sourceLine" id="cb9-17" title="17"></a>
+<a class="sourceLine" id="cb9-18" title="18"><span class="co"># remove rare words</span></a>
+<a class="sourceLine" id="cb9-19" title="19">terms_to_drop_rare &lt;-<span class="st"> </span><span class="kw">which</span>(slam<span class="op">::</span><span class="kw">col_sums</span>(dtm) <span class="op">&lt;=</span><span class="st"> </span>10L)</a>
+<a class="sourceLine" id="cb9-20" title="20"><span class="cf">if</span> (<span class="kw">length</span>(terms_to_drop_rare) <span class="op">&gt;</span><span class="st"> </span>0L) dtm &lt;-<span class="st"> </span>dtm[,<span class="op">-</span>terms_to_drop_rare]</a>
+<a class="sourceLine" id="cb9-21" title="21"></a>
+<a class="sourceLine" id="cb9-22" title="22"><span class="co"># remove documents that are empty now</span></a>
+<a class="sourceLine" id="cb9-23" title="23">empty_docs &lt;-<span class="st"> </span><span class="kw">which</span>(slam<span class="op">::</span><span class="kw">row_sums</span>(dtm) <span class="op">==</span><span class="st"> </span>0L)</a>
+<a class="sourceLine" id="cb9-24" title="24"><span class="cf">if</span> (<span class="kw">length</span>(empty_docs) <span class="op">&gt;</span><span class="st"> </span>0L) dtm &lt;-<span class="st"> </span>dtm[<span class="op">-</span>empty_docs,]</a>
+<a class="sourceLine" id="cb9-25" title="25"><span class="kw">dim</span>(dtm)</a></code></pre></div>
+<pre><code>## [1]  141 1407</code></pre>
+</div>
+<div id="data-transition-from-r-to-python" class="section level2">
+<h2>Data transition from R to Python</h2>
+<div id="prepare-the-corpus-object" class="section level3">
+<h3>Prepare the ‘corpus’ object</h3>
+<p>We need a list of list with tuples inside …</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" title="1">dtm<span class="op">$</span>j &lt;-<span class="st"> </span>dtm<span class="op">$</span>j <span class="op">-</span><span class="st"> </span>1L</a>
+<a class="sourceLine" id="cb11-2" title="2">py<span class="op">$</span>j &lt;-<span class="st"> </span><span class="kw">r_to_py</span>(<span class="kw">unname</span>(<span class="kw">split</span>(<span class="dt">x =</span> dtm<span class="op">$</span>j, <span class="dt">f =</span> dtm<span class="op">$</span>i)), <span class="dt">convert =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb11-3" title="3">py<span class="op">$</span>v &lt;-<span class="st"> </span><span class="kw">r_to_py</span>(<span class="kw">unname</span>(<span class="kw">split</span>(<span class="dt">x =</span> dtm<span class="op">$</span>v, <span class="dt">f =</span> dtm<span class="op">$</span>i)), <span class="dt">convert =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb11-4" title="4"><span class="kw">py_run_string</span>(<span class="st">&quot;corpus = [zip(j[x],v[x]) for x in range(len(j))]&quot;</span>)</a></code></pre></div>
+</div>
+<div id="prepare-the-dictionary-class-object" class="section level3">
+<h3>Prepare the ‘Dictionary’ class object</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1"><span class="kw">Encoding</span>(dtm<span class="op">$</span>dimnames<span class="op">$</span>Terms) &lt;-<span class="st"> &quot;UTF-8&quot;</span></a>
+<a class="sourceLine" id="cb12-2" title="2">py<span class="op">$</span>terms &lt;-<span class="st"> </span>dtm<span class="op">$</span>dimnames<span class="op">$</span>Terms</a>
+<a class="sourceLine" id="cb12-3" title="3"><span class="kw">py_run_string</span>(<span class="st">&quot;token2id = dict(zip(terms, range(len(terms))))&quot;</span>)</a>
+<a class="sourceLine" id="cb12-4" title="4">py<span class="op">$</span>dictionary &lt;-<span class="st"> </span>gensim<span class="op">$</span>corpora<span class="op">$</span>dictionary<span class="op">$</span><span class="kw">Dictionary</span>()</a>
+<a class="sourceLine" id="cb12-5" title="5"><span class="kw">py_run_string</span>(<span class="st">&quot;dictionary.__dict__[&#39;token2id&#39;] = token2id&quot;</span>)</a></code></pre></div>
+</div>
+</div>
+<div id="computing-the-topic-model" class="section level2">
+<h2>Computing the topic model</h2>
+<p>And now we can run the gensim topicmodelling engine.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" title="1">started &lt;-<span class="st"> </span><span class="kw">Sys.time</span>()</a>
+<a class="sourceLine" id="cb13-2" title="2"><span class="cf">if</span> (<span class="kw">as.integer</span>(threads) <span class="op">==</span><span class="st"> </span>1L){</a>
+<a class="sourceLine" id="cb13-3" title="3">  lda_model &lt;-<span class="st"> </span>gensim<span class="op">$</span>models<span class="op">$</span>ldamodel<span class="op">$</span><span class="kw">LdaModel</span>(</a>
+<a class="sourceLine" id="cb13-4" title="4">    <span class="dt">corpus =</span> py<span class="op">$</span>corpus,</a>
+<a class="sourceLine" id="cb13-5" title="5">    <span class="dt">id2word =</span> py<span class="op">$</span>dictionary,</a>
+<a class="sourceLine" id="cb13-6" title="6">    <span class="dt">num_topics =</span> 250L, </a>
+<a class="sourceLine" id="cb13-7" title="7">    <span class="dt">random_state =</span> 100L,</a>
+<a class="sourceLine" id="cb13-8" title="8">    <span class="dt">update_every =</span> 1L,</a>
+<a class="sourceLine" id="cb13-9" title="9">    <span class="dt">chunksize =</span> 100L,</a>
+<a class="sourceLine" id="cb13-10" title="10">    <span class="dt">passes =</span> 10L,</a>
+<a class="sourceLine" id="cb13-11" title="11">    <span class="dt">alpha =</span> <span class="st">&quot;auto&quot;</span>,</a>
+<a class="sourceLine" id="cb13-12" title="12">    <span class="dt">per_word_topics =</span> <span class="ot">TRUE</span></a>
+<a class="sourceLine" id="cb13-13" title="13">  )</a>
+<a class="sourceLine" id="cb13-14" title="14">} <span class="cf">else</span> {</a>
+<a class="sourceLine" id="cb13-15" title="15">  lda_model &lt;-<span class="st"> </span>gensim<span class="op">$</span>models<span class="op">$</span>ldamulticore<span class="op">$</span><span class="kw">LdaMulticore</span>(</a>
+<a class="sourceLine" id="cb13-16" title="16">    <span class="dt">corpus =</span> py<span class="op">$</span>corpus,</a>
+<a class="sourceLine" id="cb13-17" title="17">    <span class="dt">id2word =</span> py<span class="op">$</span>dictionary,</a>
+<a class="sourceLine" id="cb13-18" title="18">    <span class="dt">num_topics =</span> 20L,</a>
+<a class="sourceLine" id="cb13-19" title="19">    <span class="dt">random_state =</span> 100L,</a>
+<a class="sourceLine" id="cb13-20" title="20">    <span class="dt">chunksize =</span> 100L,</a>
+<a class="sourceLine" id="cb13-21" title="21">    <span class="dt">passes =</span> 10L,</a>
+<a class="sourceLine" id="cb13-22" title="22">    <span class="dt">per_word_topics =</span> <span class="ot">TRUE</span>,</a>
+<a class="sourceLine" id="cb13-23" title="23">    <span class="dt">workers =</span> <span class="kw">as.integer</span>(threads) <span class="co"># required to be integer</span></a>
+<a class="sourceLine" id="cb13-24" title="24">  )</a>
+<a class="sourceLine" id="cb13-25" title="25">  </a>
+<a class="sourceLine" id="cb13-26" title="26">}</a>
+<a class="sourceLine" id="cb13-27" title="27"></a>
+<a class="sourceLine" id="cb13-28" title="28">finished &lt;-<span class="st"> </span><span class="kw">Sys.time</span>()</a>
+<a class="sourceLine" id="cb13-29" title="29"><span class="kw">print</span>(finished <span class="op">-</span><span class="st"> </span>started)</a></code></pre></div>
+<pre><code>## Time difference of 12.97189 secs</code></pre>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1">lda_model<span class="op">$</span><span class="kw">print_topics</span>()</a></code></pre></div>
+<pre><code>## [[1]]
+## [[1]][[1]]
+## [1] 0
+## 
+## [[1]][[2]]
+## [1] &quot;0.028*\&quot;Beifall\&quot; + 0.023*\&quot;dass\&quot; + 0.022*\&quot;SPD\&quot; + 0.021*\&quot;DIE\&quot; + 0.021*\&quot;GRÜNEN\&quot; + 0.019*\&quot;BÜNDNIS\&quot; + 0.015*\&quot;beim\&quot; + 0.013*\&quot;Abgeordneten\&quot; + 0.013*\&quot;FDP\&quot; + 0.011*\&quot;sowie\&quot;&quot;
+## 
+## 
+## [[2]]
+## [[2]][[1]]
+## [1] 1
+## 
+## [[2]][[2]]
+## [1] &quot;0.046*\&quot;dass\&quot; + 0.023*\&quot;Beifall\&quot; + 0.019*\&quot;CSU\&quot; + 0.018*\&quot;CDU\&quot; + 0.017*\&quot;FDP\&quot; + 0.013*\&quot;SPD\&quot; + 0.012*\&quot;Abgeordneten\&quot; + 0.012*\&quot;müssen\&quot; + 0.011*\&quot;Menschen\&quot; + 0.010*\&quot;Deutschland\&quot;&quot;
+## 
+## 
+## [[3]]
+## [[3]][[1]]
+## [1] 2
+## 
+## [[3]][[2]]
+## [1] &quot;0.036*\&quot;BÜNDNIS\&quot; + 0.035*\&quot;dass\&quot; + 0.035*\&quot;DIE\&quot; + 0.035*\&quot;GRÜNEN\&quot; + 0.032*\&quot;Trittin\&quot; + 0.027*\&quot;Jürgen\&quot; + 0.026*\&quot;Energien\&quot; + 0.017*\&quot;Bereich\&quot; + 0.015*\&quot;erneuerbaren\&quot; + 0.014*\&quot;CDU\&quot;&quot;
+## 
+## 
+## [[4]]
+## [[4]][[1]]
+## [1] 3
+## 
+## [[4]][[2]]
+## [1] &quot;0.028*\&quot;SPD\&quot; + 0.026*\&quot;Beifall\&quot; + 0.022*\&quot;dass\&quot; + 0.016*\&quot;FDP\&quot; + 0.014*\&quot;Koalitionsvertrag\&quot; + 0.013*\&quot;LINKEN\&quot; + 0.013*\&quot;Abgeordneten\&quot; + 0.013*\&quot;DIE\&quot; + 0.012*\&quot;GRÜNEN\&quot; + 0.012*\&quot;Herr\&quot;&quot;
+## 
+## 
+## [[5]]
+## [[5]][[1]]
+## [1] 4
+## 
+## [[5]][[2]]
+## [1] &quot;0.029*\&quot;SPD\&quot; + 0.022*\&quot;dass\&quot; + 0.020*\&quot;Heil\&quot; + 0.019*\&quot;Beifall\&quot; + 0.018*\&quot;Menschen\&quot; + 0.015*\&quot;Herr\&quot; + 0.015*\&quot;DIE\&quot; + 0.013*\&quot;Peine\&quot; + 0.013*\&quot;FDP\&quot; + 0.013*\&quot;Abgeordneten\&quot;&quot;
+## 
+## 
+## [[6]]
+## [[6]][[1]]
+## [1] 5
+## 
+## [[6]][[2]]
+## [1] &quot;0.033*\&quot;dass\&quot; + 0.018*\&quot;CDU\&quot; + 0.017*\&quot;CSU\&quot; + 0.015*\&quot;Beifall\&quot; + 0.013*\&quot;FDP\&quot; + 0.010*\&quot;Menschen\&quot; + 0.008*\&quot;Herr\&quot; + 0.008*\&quot;müssen\&quot; + 0.008*\&quot;Deutschland\&quot; + 0.007*\&quot;unserer\&quot;&quot;
+## 
+## 
+## [[7]]
+## [[7]][[1]]
+## [1] 6
+## 
+## [[7]][[2]]
+## [1] &quot;0.006*\&quot;dass\&quot; + 0.006*\&quot;Beifall\&quot; + 0.005*\&quot;DIE\&quot; + 0.004*\&quot;GRÜNEN\&quot; + 0.003*\&quot;SPD\&quot; + 0.003*\&quot;FDP\&quot; + 0.003*\&quot;Abgeordneten\&quot; + 0.003*\&quot;CSU\&quot; + 0.003*\&quot;BÜNDNIS\&quot; + 0.003*\&quot;CDU\&quot;&quot;
+## 
+## 
+## [[8]]
+## [[8]][[1]]
+## [1] 7
+## 
+## [[8]][[2]]
+## [1] &quot;0.032*\&quot;dass\&quot; + 0.021*\&quot;DIE\&quot; + 0.020*\&quot;SPD\&quot; + 0.018*\&quot;Beifall\&quot; + 0.018*\&quot;GRÜNEN\&quot; + 0.017*\&quot;beim\&quot; + 0.014*\&quot;Klimaschutz\&quot; + 0.013*\&quot;BÜNDNIS\&quot; + 0.012*\&quot;Abgeordneten\&quot; + 0.012*\&quot;Herr\&quot;&quot;
+## 
+## 
+## [[9]]
+## [[9]][[1]]
+## [1] 8
+## 
+## [[9]][[2]]
+## [1] &quot;0.041*\&quot;Kultur\&quot; + 0.023*\&quot;dass\&quot; + 0.017*\&quot;Kinder\&quot; + 0.017*\&quot;Menschen\&quot; + 0.014*\&quot;Chancen\&quot; + 0.014*\&quot;mehr\&quot; + 0.011*\&quot;gibt\&quot; + 0.011*\&quot;Deshalb\&quot; + 0.011*\&quot;Beifall\&quot; + 0.011*\&quot;neue\&quot;&quot;
+## 
+## 
+## [[10]]
+## [[10]][[1]]
+## [1] 9
+## 
+## [[10]][[2]]
+## [1] &quot;0.002*\&quot;Beifall\&quot; + 0.001*\&quot;dass\&quot; + 0.001*\&quot;CDU\&quot; + 0.001*\&quot;FDP\&quot; + 0.001*\&quot;CSU\&quot; + 0.001*\&quot;SPD\&quot; + 0.001*\&quot;Abgeordneten\&quot; + 0.001*\&quot;müssen\&quot; + 0.001*\&quot;DIE\&quot; + 0.001*\&quot;mehr\&quot;&quot;
+## 
+## 
+## [[11]]
+## [[11]][[1]]
+## [1] 10
+## 
+## [[11]][[2]]
+## [1] &quot;0.030*\&quot;Beifall\&quot; + 0.030*\&quot;LINKEN\&quot; + 0.026*\&quot;statt\&quot; + 0.021*\&quot;Arbeitsplätze\&quot; + 0.021*\&quot;endlich\&quot; + 0.017*\&quot;Regierungen\&quot; + 0.017*\&quot;europäischen\&quot; + 0.013*\&quot;Sicherung\&quot; + 0.013*\&quot;sowie\&quot; + 0.013*\&quot;Herr\&quot;&quot;
+## 
+## 
+## [[12]]
+## [[12]][[1]]
+## [1] 11
+## 
+## [[12]][[2]]
+## [1] &quot;0.006*\&quot;dass\&quot; + 0.004*\&quot;Beifall\&quot; + 0.003*\&quot;CSU\&quot; + 0.002*\&quot;CDU\&quot; + 0.002*\&quot;DIE\&quot; + 0.002*\&quot;FDP\&quot; + 0.002*\&quot;sowie\&quot; + 0.002*\&quot;Menschen\&quot; + 0.002*\&quot;SPD\&quot; + 0.002*\&quot;Abgeordneten\&quot;&quot;
+## 
+## 
+## [[13]]
+## [[13]][[1]]
+## [1] 12
+## 
+## [[13]][[2]]
+## [1] &quot;0.031*\&quot;CDU\&quot; + 0.031*\&quot;CSU\&quot; + 0.029*\&quot;Beifall\&quot; + 0.028*\&quot;FDP\&quot; + 0.021*\&quot;dass\&quot; + 0.017*\&quot;DIE\&quot; + 0.013*\&quot;Abgeordneten\&quot; + 0.013*\&quot;GRÜNEN\&quot; + 0.011*\&quot;Deutschland\&quot; + 0.011*\&quot;BÜNDNIS\&quot;&quot;
+## 
+## 
+## [[14]]
+## [[14]][[1]]
+## [1] 13
+## 
+## [[14]][[2]]
+## [1] &quot;0.006*\&quot;dass\&quot; + 0.004*\&quot;Beifall\&quot; + 0.003*\&quot;CSU\&quot; + 0.003*\&quot;CDU\&quot; + 0.003*\&quot;FDP\&quot; + 0.002*\&quot;SPD\&quot; + 0.002*\&quot;sowie\&quot; + 0.002*\&quot;DIE\&quot; + 0.002*\&quot;müssen\&quot; + 0.002*\&quot;GRÜNEN\&quot;&quot;
+## 
+## 
+## [[15]]
+## [[15]][[1]]
+## [1] 14
+## 
+## [[15]][[2]]
+## [1] &quot;0.026*\&quot;Beifall\&quot; + 0.025*\&quot;dass\&quot; + 0.024*\&quot;CDU\&quot; + 0.024*\&quot;CSU\&quot; + 0.022*\&quot;FDP\&quot; + 0.016*\&quot;SPD\&quot; + 0.014*\&quot;mehr\&quot; + 0.010*\&quot;Ferner\&quot; + 0.010*\&quot;Menschen\&quot; + 0.008*\&quot;Elke\&quot;&quot;
+## 
+## 
+## [[16]]
+## [[16]][[1]]
+## [1] 15
+## 
+## [[16]][[2]]
+## [1] &quot;0.041*\&quot;dass\&quot; + 0.020*\&quot;DIE\&quot; + 0.019*\&quot;GRÜNEN\&quot; + 0.019*\&quot;BÜNDNIS\&quot; + 0.015*\&quot;Beifall\&quot; + 0.014*\&quot;Wieland\&quot; + 0.013*\&quot;Wolfgang\&quot; + 0.012*\&quot;FDP\&quot; + 0.012*\&quot;CSU\&quot; + 0.012*\&quot;CDU\&quot;&quot;
+## 
+## 
+## [[17]]
+## [[17]][[1]]
+## [1] 16
+## 
+## [[17]][[2]]
+## [1] &quot;0.035*\&quot;dass\&quot; + 0.015*\&quot;Beifall\&quot; + 0.013*\&quot;Heiterkeit\&quot; + 0.011*\&quot;Welt\&quot; + 0.010*\&quot;Entwicklungszusammenarbeit\&quot; + 0.009*\&quot;darf\&quot; + 0.009*\&quot;Wahl\&quot; + 0.008*\&quot;bitte\&quot; + 0.008*\&quot;BÜNDNIS\&quot; + 0.008*\&quot;GRÜNEN\&quot;&quot;
+## 
+## 
+## [[18]]
+## [[18]][[1]]
+## [1] 17
+## 
+## [[18]][[2]]
+## [1] &quot;0.032*\&quot;Beifall\&quot; + 0.032*\&quot;dass\&quot; + 0.029*\&quot;LINKEN\&quot; + 0.013*\&quot;DIE\&quot; + 0.012*\&quot;GRÜNEN\&quot; + 0.011*\&quot;müssen\&quot; + 0.009*\&quot;Abgeordneten\&quot; + 0.008*\&quot;Herr\&quot; + 0.008*\&quot;mehr\&quot; + 0.008*\&quot;Koalitionsvertrag\&quot;&quot;
+## 
+## 
+## [[19]]
+## [[19]][[1]]
+## [1] 18
+## 
+## [[19]][[2]]
+## [1] &quot;0.002*\&quot;FDP\&quot; + 0.002*\&quot;Beifall\&quot; + 0.002*\&quot;CDU\&quot; + 0.002*\&quot;CSU\&quot; + 0.001*\&quot;dass\&quot; + 0.001*\&quot;SPD\&quot; + 0.001*\&quot;müssen\&quot; + 0.001*\&quot;Deutschland\&quot; + 0.001*\&quot;DIE\&quot; + 0.001*\&quot;Menschen\&quot;&quot;
+## 
+## 
+## [[20]]
+## [[20]][[1]]
+## [1] 19
+## 
+## [[20]][[2]]
+## [1] &quot;0.037*\&quot;Beifall\&quot; + 0.031*\&quot;CSU\&quot; + 0.031*\&quot;CDU\&quot; + 0.029*\&quot;FDP\&quot; + 0.017*\&quot;Bundesminister\&quot; + 0.015*\&quot;Sitzung\&quot; + 0.012*\&quot;Bundestages\&quot; + 0.012*\&quot;Abgeordneten\&quot; + 0.012*\&quot;bitte\&quot; + 0.012*\&quot;dass\&quot;&quot;</code></pre>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
