@@ -18,6 +18,11 @@ editor_options:
 I used [this](https://www.machinelearningplus.com/nlp/topic-modeling-gensim-python/) website as an introduction to gensim and to understand the data structure.
 
 
+```{r}
+outdir <- tempdir()
+modelname <- "germaparlmini"
+```
+
 ## Preparing Python
 
 ```{r import_gensim, message = FALSE}
@@ -113,8 +118,12 @@ py_run_string("dictionary.__dict__['token2id'] = token2id")
 
 And now we can run the gensim topicmodelling engine.
 
-```{r lda_single_threaded}
+```{r lda_single_threaded, echo = FALSE}
 started <- Sys.time()
+```
+
+
+```{r}
 if (as.integer(threads) == 1L){
   lda_model <- gensim$models$ldamodel$LdaModel(
     corpus = py$corpus,
@@ -140,8 +149,11 @@ if (as.integer(threads) == 1L){
   )
   
 }
+```
 
-finished <- Sys.time()
-print(finished - started)
-lda_model$print_topics()
+Time passed for computing the topic model: `r Sys.time() - started`
+
+
+```{r}
+lda_model$save(file.path(outdir, modelname))
 ```
