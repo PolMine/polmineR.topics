@@ -1,14 +1,14 @@
 Package: topicanalysis
 Type: Package
 Title: tools for topicmodelling
-Version: 0.1.14
-Date: 2019-10-19
+Version: 0.1.15
+Date: 2019-10-23
 Author: Andreas Blaette
 Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
 Description: Auxiliary functions for topicmodelling.
 Encoding: UTF-8
 Depends:
-  R (>= 2.10)
+  R (>= 3.5.0)
 Imports:
   polmineR,
   methods,
@@ -32,7 +32,8 @@ Suggests:
   RColorBrewer,
   DT,
   cwbtools,
-  magrittr
+  magrittr,
+  reticulate
 LazyData: false
 License: GPL-3
 VignetteBuilder: knitr
@@ -46,4 +47,5 @@ Collate:
   'shiny.R'
   'TopicanalysisBundle.R'
   'data.R'
+  'gensim.R'
 RoxygenNote: 6.1.1

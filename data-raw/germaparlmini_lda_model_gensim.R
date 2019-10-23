@@ -40,7 +40,8 @@ if (length(terms_to_drop_rare) > 0L) dtm <- dtm[,-terms_to_drop_rare]
 # remove documents that are empty now
 empty_docs <- which(slam::row_sums(dtm) == 0L)
 if (length(empty_docs) > 0L) dtm <- dtm[-empty_docs,]
-dim(dtm)
+
+saveRDS(object = dtm, file = path.expand(file.path(outdir, "germaparlmini_dtm.rds")))
 
 dtm$j <- dtm$j - 1L
 py$j <- r_to_py(unname(split(x = dtm$j, f = dtm$i)), convert = TRUE)

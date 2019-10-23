@@ -2,6 +2,9 @@
 
 export(Topicanalysis)
 export(TopicanalysisBundle)
+export(dtm_as_bow)
+export(gensim_ldamodel_as_LDA_Gibbs)
+export(gensim_ldamodel_load)
 export(get_highlight_list)
 export(malletCmd)
 export(store_java_object)
