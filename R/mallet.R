@@ -1,7 +1,6 @@
 #' Interface to mallet topicmodelling.
 #' 
-#' Turn \code{partition_bundle} into a mallet object (instance list). The typical 
-#' workflow will be as follows (see example):
+#' The envisaged workflow will be as follows (see example):
 #' (1) Turn \code{partition_bundle}-object into mallet instance list, (2a) store the
 #' resulting \code{jobjRef}-object locally using \code{java_object_store}, create mallet command
 #' with \code{mallet_cmd}, and run mallet from the command line; alternativelly (2b) run
@@ -39,16 +38,16 @@
 #' # Save instance list to disk and run mallet binary from command line
 #' 
 #' instancefile <- mallet_instance_list_store(instance_list, filename = tempfile()) # output to a tempfile
-#' destdir <- tempdir()
+#' destfile <- tempfile()
 #' cmd <- mallet_cmd(
 #'   mallet_bin_dir = "/opt/mallet-2.0.8/bin",
 #'   sourcefile = instancefile,
 #'   threads = 1,
-#'   target_dir = destdir
+#'   destfile = destfile
 #' )
 #' system(cmd)
-#' mallet_lda <- mallet_topicmodel_load(file.path(destdir, "model.bin"))
-#' y <- mallet_as_LDA_Gibbs(mallet_lda, modeldir = destdir)
+#' mallet_lda <- mallet_load_topicmodel(destfile)
+#' topicmodels_lda <- as(mallet_lda, "LDA_Gibbs")
 #' @rdname mallet
 #' @importFrom polmineR get_token_stream
 #' @export mallet_make_instance_list
@@ -75,17 +74,17 @@ mallet_make_instance_list <- function(x, p_attribute = "word", terms_to_drop = t
 #' @details The \code{mallet_cmd} function will return a command to be executed
 #'   in a terminal that will prepare a topic model with the input parameters.
 #' @param x An object to process (HaHaHa).
-#' @param modeldir The director where a model computed by mallet is stored.
+#' @param model A topic model prepared by mallet.
 #' @param mallet_bin_dir The directory where the executable 'mallet' resides.
 #' @param sourcefile File to which an instance list has been saved.
-#' @param target_dir Directory where results will be saved.
+#' @param destfile Directory where results will be saved.
 #' @param topwords ...
 #' @param topics The number of topics the topic model shall have.
 #' @param iterations Number of iterations to perform.
 #' @param threads Number of threads to use.
 #' @export mallet_cmd
 #' @rdname mallet
-mallet_cmd <- function(mallet_bin_dir, sourcefile, target_dir, topwords = 50, topics = 50, iterations = 2000, threads = 1){
+mallet_cmd <- function(mallet_bin_dir, sourcefile, destfile, topwords = 50, topics = 50, iterations = 2000, threads = 1){
   stopifnot(
     is.numeric(topics), topics > 2,
     is.numeric(iterations), iterations > 1,
@@ -93,52 +92,55 @@ mallet_cmd <- function(mallet_bin_dir, sourcefile, target_dir, topwords = 50, to
     is.numeric(threads), threads > 0
   )
   
-  # check whether target_dir exists
-  if (!file.exists(target_dir)){
-    dir.create(target_dir)
-    message("... creating target_dir")
-  } else {
-    if (file.info(target_dir)[,"isdir"] == FALSE){
-      stop("target_dir is not a directory!")
-    }
-  }
-
   cmd <- c(
     file.path(mallet_bin_dir, "mallet"), "train-topics",
     "--input", sourcefile,
     "--num-topics", topics,
     "--num-iterations", iterations,
-    "--output-model", file.path(target_dir, "model.bin"),
-    "--output-state", file.path(target_dir, "state.gz"),
-    "--output-doc-topics", file.path(target_dir, "doc-topics.csv"),
-    "--output-topic-keys", file.path(target_dir, "topics-keys.csv"),
-    "--num-top-words", topwords,
-    "--num-threads", threads,
-    "--xml-topic-report", file.path(target_dir, "xmlTopicReport.xml"),
-    "--topic-word-weights-file", file.path(target_dir, "wordWeights.csv"),
-    "--xml-topic-phrase-report", file.path(target_dir, "topicPhraseReport.xml")
+    "--output-model", destfile,
+     "--num-threads", threads
     )
   paste(cmd, collapse = " ")
 }
 
 
-#' @rdname mallet
-#' @export mallet_as_LDA_Gibbs
-mallet_as_LDA_Gibbs <- function(x, modeldir){
+# setOldClass("jobjRef")
+
+#' @export
+setAs(from = "jobjRef", to = "LDA_Gibbs", function(from){
   new(
     "LDA_Gibbs",
     Dim = c(
-      x$data$size(), # number of documents
-      x$getAlphabet()$size() # number of terms
+      from$data$size(), # Number of documents
+      from$getAlphabet()$size() # Number of terms
     ),
-    # control = new("TopicModelcontrol"),
-    k = x$getNumTopics(),
-    terms = strsplit(x$getAlphabet()$toString(), "\n")[[1]],
-    documents = sapply(0L:(x$data$size() - 1L), function(i) x$data$get(i)$instance$getName()), # Vector containing the document names
-    beta = t(as.matrix(mallet_load_word_weights(file.path(modeldir, "wordWeights.csv")))), # matrix; logarithmized parameters of the word distribution for each topic
-    gamma = do.call(rbind, lapply(0L:(x$data$size() - 1L), function(i) x$getTopicProbabilities(i))), # matrix, parameters of the posterior topic distribution for each document
-    iter = x$numIterations
+    k = from$getNumTopics(),
+    terms = strsplit(from$getAlphabet()$toString(), "\n")[[1]],
+    documents = sapply(0L:(from$data$size() - 1L), function(i) from$data$get(i)$instance$getName()), # Vector containing the document names
+    beta = t(as.matrix(mallet_get_word_weights(from))), # A matrix; logarithmized parameters of the word distribution for each topic
+    gamma = do.call(rbind, lapply(0L:(from$data$size() - 1L), function(i) from$getTopicProbabilities(i))), # matrix, parameters of the posterior topic distribution for each document
+    iter = from$numIterations
   )
+})
+
+
+
+#' @export mallet_get_word_weights
+#' @rdname mallet
+mallet_get_word_weights <- function(model){
+  if (!requireNamespace("rJava", quietly = TRUE)){
+    stop("Package 'rJava' required, but not available.")
+  }
+  destfile <- tempfile()
+  # file <- new(rJava::J("java/io/File"), destfile)
+  file <- rJava::.jnew("java/io/File", destfile)
+  # file_writer <- new(rJava::J("java/io/FileWriter"), file)
+  file_writer <- rJava::.jnew("java/io/FileWriter", file)
+  # print_writer <- new(rJava::J("java/io/PrintWriter"), file_writer)
+  print_writer <- rJava::new(rJava::J("java/io/PrintWriter"), file_writer)
+  model$printTopicWordWeights(print_writer)
+  print_writer$close()
+  mallet_load_word_weights(destfile)
 }
 
 
@@ -160,59 +162,6 @@ mallet_load_word_weights <- function(filename){
 }
 
 
-#' @import xml2
-#' @rdname mallet
-#' 
-mallet_load_results <- function(modeldir){
-  
-  retval <- list()
-  
-  message("... importing doc-topics.csv")
-  docs_topics <- read.csv(file = file.path(modeldir, "doc-topics.csv"), sep = "\t", header = FALSE)
-  rownames(docs_topics) <- as.character(1L:nrow(docs_topics))
-  docs_topics_matrix <- as.matrix(docs_topics[, 3L:ncol(docs_topics)])
-  colnames(docs_topics_matrix) <- as.character(1L:ncol(docs_topics_matrix))
-  retval[["docs_topics_matrix"]] <- docs_topics_matrix
-  
-  message("... importing topics-keys.csv")
-  topic_keys_raw <- read.csv(
-    file = file.path(modeldir, "topics-keys.csv"), sep = "\t", header = FALSE,
-    stringsAsFactors = FALSE
-    )
-  topic_keys_matrix <- as.matrix(data.frame(strsplit(topic_keys_raw[[3]], "\\s")))
-  colnames(topic_keys_matrix) <- NULL
-  retval[["topic_keys_matrix"]] <- topic_keys_matrix
-  
-  message("... importing word-weights.csv")
-  retval[["word_weights"]] <- mallet_load_word_weights(file.path(modeldir, "wordWeights.csv"))
-
-  message("... importing topicPhraseReport.xml")
-  topic_phrase_xml_file <- read_xml(file.path(modeldir, "topicPhraseReport.xml"))
-  topic_nodes <- xml_find_all(topic_phrase_xml_file, "/topics/topic")
-  topic_phrase_report_df <- do.call(rbind, lapply(
-    topic_nodes,
-    function(x){
-      do.call(rbind, lapply(
-        c("word", "phrase"),
-        function(what){
-          children <- xml_find_all(x, paste("./", what, sep = ""))
-          cbind(
-            topic = rep(xml_attrs(x)["id"], times=length(children)),
-            what = rep(what, times = length(children)),
-            token = sapply(children, xml_text),
-            do.call(rbind, lapply(children, xml_attrs))
-          )
-        }
-      ))
-    }
-  ))
-  retval[["topicPhraseReportDT"]] <- as.data.table(topic_phrase_report_df)
-  
-  retval
-}
-
-
-# setOldClass(Classes = "jobjRef")
 
 #' @rdname mallet
 #' @export mallet_instance_list_store
@@ -225,10 +174,7 @@ mallet_instance_list_store <- function(x, filename = tempfile()){
 }
 
 #' @rdname mallet
-#' @export mallet_topicmodel_load
-mallet_topicmodel_load <- function(filename){
-  parallel_topic_model <- rJava::J("cc/mallet/topics/ParallelTopicModel")$read(rJava::.jnew("java/io/File", filename))
-  # Map in the RTopicModel class which can be evaluated using mallet package
-  # y <- .jcast(parallel_topic_model, new.class = "cc/mallet/topics/RTopicModel", check = TRUE)
-  parallel_topic_model
+#' @export mallet_load_topicmodel
+mallet_load_topicmodel <- function(filename){
+  rJava::J("cc/mallet/topics/ParallelTopicModel")$read(rJava::.jnew("java/io/File", filename))
 }

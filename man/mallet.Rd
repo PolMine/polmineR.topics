@@ -3,28 +3,25 @@
 \name{mallet_make_instance_list}
 \alias{mallet_make_instance_list}
 \alias{mallet_cmd}
-\alias{mallet_as_LDA_Gibbs}
+\alias{mallet_get_word_weights}
 \alias{mallet_load_word_weights}
-\alias{mallet_load_results}
 \alias{mallet_instance_list_store}
-\alias{mallet_topicmodel_load}
+\alias{mallet_load_topicmodel}
 \title{Interface to mallet topicmodelling.}
 \usage{
 mallet_make_instance_list(x, p_attribute = "word",
   terms_to_drop = tm::stopwords("de"), mc = TRUE, verbose = TRUE)
 
-mallet_cmd(mallet_bin_dir, sourcefile, target_dir, topwords = 50,
+mallet_cmd(mallet_bin_dir, sourcefile, destfile, topwords = 50,
   topics = 50, iterations = 2000, threads = 1)
 
-mallet_as_LDA_Gibbs(x, modeldir)
+mallet_get_word_weights(model)
 
 mallet_load_word_weights(filename)
 
-mallet_load_results(modeldir)
-
 mallet_instance_list_store(x, filename = tempfile())
 
-mallet_topicmodel_load(filename)
+mallet_load_topicmodel(filename)
 }
 \arguments{
 \item{x}{An object to process (HaHaHa).}
@@ -41,7 +38,7 @@ mallet_topicmodel_load(filename)
 
 \item{sourcefile}{File to which an instance list has been saved.}
 
-\item{target_dir}{Directory where results will be saved.}
+\item{destfile}{Directory where results will be saved.}
 
 \item{topwords}{...}
 
@@ -51,15 +48,14 @@ mallet_topicmodel_load(filename)
 
 \item{threads}{Number of threads to use.}
 
-\item{modeldir}{The director where a model computed by mallet is stored.}
+\item{model}{A topic model prepared by mallet.}
 
 \item{filename}{Where to store the Java-object.}
 
 \item{...}{further parameters}
 }
 \description{
-Turn \code{partition_bundle} into a mallet object (instance list). The typical 
-workflow will be as follows (see example):
+The envisaged workflow will be as follows (see example):
 (1) Turn \code{partition_bundle}-object into mallet instance list, (2a) store the
 resulting \code{jobjRef}-object locally using \code{java_object_store}, create mallet command
 with \code{mallet_cmd}, and run mallet from the command line; alternativelly (2b) run
@@ -91,14 +87,14 @@ if (requireNamespace("mallet")){
 # Save instance list to disk and run mallet binary from command line
 
 instancefile <- mallet_instance_list_store(instance_list, filename = tempfile()) # output to a tempfile
-destdir <- tempdir()
+destfile <- tempfile()
 cmd <- mallet_cmd(
   mallet_bin_dir = "/opt/mallet-2.0.8/bin",
   sourcefile = instancefile,
   threads = 1,
-  target_dir = destdir
+  destfile = destfile
 )
 system(cmd)
-mallet_lda <- mallet_topicmodel_load(file.path(destdir, "model.bin"))
-y <- mallet_as_LDA_Gibbs(mallet_lda, modeldir = destdir)
+mallet_lda <- mallet_load_topicmodel(destfile)
+topicmodels_lda <- as(mallet_lda, "LDA_Gibbs")
 }

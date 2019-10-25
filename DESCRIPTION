@@ -20,7 +20,6 @@ Imports:
   zoo,
   lsa,
   wordcloud,
-  xml2,
   slam,
   shiny
 Suggests:
@@ -49,4 +48,5 @@ Collate:
   'TopicanalysisBundle.R'
   'data.R'
   'gensim.R'
+  'zzz.R'
 RoxygenNote: 6.1.1
