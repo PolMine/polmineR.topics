@@ -25,6 +25,7 @@ Imports:
   shiny
 Suggests:
   rJava,
+  mallet,
   testthat,
   knitr,
   igraph,
@@ -42,7 +43,7 @@ Collate:
   'Topicanalysis.R'
   'as.zoo.R'
   'cooccurrences.R'
-  'as.mallet.R'
+  'mallet.R'
   'dotchart.R'
   'shiny.R'
   'TopicanalysisBundle.R'
