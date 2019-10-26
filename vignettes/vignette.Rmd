@@ -239,7 +239,6 @@ dt <- BE$cooccurrences()
 # dt <- BE$cooccurrences(verbose = FALSE) # argument verbose not yet used
 ```
 
-
 The table with co-occurrence data can be understood to include relational data. It can be parsed, processed and visualised accordingly using the *igraph* package.
 
 ```{r get_igraph_data}
