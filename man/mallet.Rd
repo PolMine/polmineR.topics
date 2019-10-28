@@ -2,9 +2,7 @@
 % Please edit documentation in R/mallet.R
 \name{mallet_make_instance_list}
 \alias{mallet_make_instance_list}
-\alias{mallet_cmd}
-\alias{mallet_get_word_weights}
-\alias{mallet_load_word_weights}
+\alias{as_LDA}
 \alias{mallet_instance_list_store}
 \alias{mallet_load_topicmodel}
 \title{Interface to mallet topicmodelling.}
@@ -12,19 +10,14 @@
 mallet_make_instance_list(x, p_attribute = "word",
   terms_to_drop = tm::stopwords("de"), mc = TRUE, verbose = TRUE)
 
-mallet_cmd(mallet_bin_dir, sourcefile, destfile, topwords = 50,
-  topics = 50, iterations = 2000, threads = 1)
-
-mallet_get_word_weights(model)
-
-mallet_load_word_weights(filename)
+as_LDA(x, verbose = TRUE)
 
 mallet_instance_list_store(x, filename = tempfile())
 
 mallet_load_topicmodel(filename)
 }
 \arguments{
-\item{x}{An object to process (HaHaHa).}
+\item{x}{A \code{partition_bundle} object.}
 
 \item{p_attribute}{The p_attribute to use, typically "word" or "lemma".}
 
@@ -34,67 +27,67 @@ mallet_load_topicmodel(filename)
 
 \item{verbose}{A \code{logical} value, whether to be verbose.}
 
-\item{mallet_bin_dir}{The directory where the executable 'mallet' resides.}
-
-\item{sourcefile}{File to which an instance list has been saved.}
-
-\item{destfile}{Directory where results will be saved.}
-
-\item{topwords}{...}
-
-\item{topics}{The number of topics the topic model shall have.}
-
-\item{iterations}{Number of iterations to perform.}
-
-\item{threads}{Number of threads to use.}
-
-\item{model}{A topic model prepared by mallet.}
-
 \item{filename}{Where to store the Java-object.}
 
 \item{...}{further parameters}
 }
 \description{
-The envisaged workflow will be as follows (see example):
-(1) Turn \code{partition_bundle}-object into mallet instance list, (2a) store the
-resulting \code{jobjRef}-object locally using \code{java_object_store}, create mallet command
-with \code{mallet_cmd}, and run mallet from the command line; alternativelly (2b) run
-mallet topic modelling from within R.
+Functionality to support the following workflow (see examples): (a) Turn
+\code{partition_bundle}-object into mallet instance list, (b) store the
+resulting \code{jobjRef}-object, (c) run mallet topic modelling and (d)
+turn ParallelTopicModel Java object into \code{LDA_Gibbs} object from
+package \code{topicmodels}.
 }
 \details{
-The \code{mallet_cmd} function will return a command to be executed
-  in a terminal that will prepare a topic model with the input parameters.
+The \code{as_LDA()}-function will turn an estimated topic model
+  prepared using 'mallet' into a \code{LDA_Gibbs} object from the
+  \code{topicmodels} package.
 }
 \examples{
  
+# Preparations: Create instance list
+
 polmineR::use("polmineR")
 speeches <- polmineR::as.speeches("GERMAPARLMINI", s_attribute_name = "speaker")
 
 if (requireNamespace("rJava")){
+  # options(java.parameters = "-Xmx4g")
   library(rJava)
-  instance_list <- mallet_make_instance_list(speeches)
+  .jinit()
+  # We need to put the jars from mallet 2.0 on the classpath because
+  # only the newer mallet version (not the one included in mallet R package)
+  # has method ParallelTopicModel$getDocumentTopics() needed by as_LDA
+  .jaddClassPath("/opt/mallet-2.0.8/class") # after .jinit()
+  .jaddClassPath("/opt/mallet-2.0.8/lib/mallet-deps.jar")
+  instance_list <- topicanalysis::mallet_make_instance_list(speeches)
+  instancefile <- mallet_instance_list_store(instance_list)
 }
 
-# Workflow 1: Run mallet from R using mallet package
+# Option 1: Run mallet from R using mallet package
 
 if (requireNamespace("mallet")){
-  engine <- mallet::MalletLDA(num.topics = 20)
-  engine$loadDocuments(instance_list)
-  engine$setAlphaOptimization(20, 50)
-  engine$train(2000)
+  lda <- mallet::MalletLDA(num.topics = 20)
+  lda$loadDocuments(instance_list)
+  lda$setAlphaOptimization(20, 50)
+  lda$train(100)
 }
 
-# Save instance list to disk and run mallet binary from command line
+# Option 2: Use ParallelTopicModel class - has write()-method
 
-instancefile <- mallet_instance_list_store(instance_list, filename = tempfile()) # output to a tempfile
-destfile <- tempfile()
-cmd <- mallet_cmd(
-  mallet_bin_dir = "/opt/mallet-2.0.8/bin",
-  sourcefile = instancefile,
-  threads = 1,
-  destfile = destfile
-)
-system(cmd)
+if (requireNamespace("mallet")){
+  destfile <- tempfile()
+  lda <- rJava::.jnew("cc/mallet/topics/ParallelTopicModel", 25L, 5.1, 0.1)
+  lda$addInstances(instance_list)
+  lda$setNumThreads(1L)
+  lda$setTopicDisplay(50L, 10L)
+  lda$setNumIterations(150L)
+  lda$estimate()
+  lda$write(rJava::.jnew("java/io/File", destfile))
+}
+
+# Load topicmodel and turn it into LDA_Gibbs
+
 mallet_lda <- mallet_load_topicmodel(destfile)
-topicmodels_lda <- as(mallet_lda, "LDA_Gibbs")
+topicmodels_lda <- as_LDA(mallet_lda, "LDA")
+
 }

@@ -1,8 +1,8 @@
 Package: topicanalysis
 Type: Package
 Title: tools for topicmodelling
-Version: 0.1.15
-Date: 2019-10-23
+Version: 0.1.16
+Date: 2019-10-28
 Author: Andreas Blaette
 Maintainer: Andreas Blaette <andreas.blaette@uni-due.de>
 Description: Auxiliary functions for topicmodelling.
@@ -21,7 +21,8 @@ Imports:
   lsa,
   wordcloud,
   slam,
-  shiny
+  shiny,
+  pbapply
 Suggests:
   rJava,
   mallet,
