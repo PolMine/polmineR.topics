@@ -39,8 +39,8 @@ library(topicanalysis)
 ```
 
 ```{r}
-library(cwbtools) # available at www.github.com/PolMine/cwbtools
-library(polmineR) # CRAN, development version at www.github.com/PolMine/polmineR
+library(cwbtools) 
+library(polmineR) 
 ```
 
 In the following examples, we will need some further packages.
@@ -74,7 +74,7 @@ To inspect/read the full text documents, we need the corpus of the 'Berliner Abg
 
 The `use()`-function of the *polmineR*-package activates corpora within the *topicanalysis*-package. If the BE corpus is not yet there, it is downloaded and put into the package.
 
-```{r}
+```{r, eval = FALSE}
 use("topicanalysis")
 if (!"BE" %in% corpus()$corpus){
   cwbtools::corpus_install(
@@ -168,20 +168,20 @@ Documents are mixtures of topics. Blei conveyed this idea in his classic article
 
 The result can be achieved using the `read()`-method, applied on a TopicModel class object.
 
-```{r}
+```{r, eval = FALSE}
 p <- partition("BE", date = "2005-04-28", who = "Körting", verbose = FALSE)
 ek <- as.speeches(p, s_attribute_name = "who", verbose = FALSE)[[4]]
 ```
 
 The `read()`-method is designed to be used in an interactive session.
 
-```{r read_method}
+```{r read_method, eval = FALSE}
 if (interactive()) read(BE_lda, ek, no_token = 150)
 ```
 
 To include a document into a Rmarkdown document (such as this vignette), we use the worker function `get_highlight_list()` and use the returned list as input for a combination of `html()` and `highlight()`.
 
-```{r show_, eval = TRUE}
+```{r show_, eval = FALSE}
 h <- get_highlight_list(BE_lda, partition_obj = ek, no_token = 150)
 html(p, height = "350px") %>%
   highlight(highlight = h)
@@ -289,7 +289,7 @@ docs
 
 The `Topicanalysis`-class has a field `bundle` for a `partition_bundle`. In "real" context, you would include a `partition_bundle` covering the whole corpus. Here, we are much more selective and generate a targetted `partition_bundle` with only those partitions we will want to have a look at. Note that we use regular expressions to extract the metadata (speaker name, date, speech number) from the document labels.
 
-```{r generate_bundle}
+```{r generate_bundle, eval = FALSE}
 BE$bundle <- as.partition_bundle(lapply(
   docs,
   function(doc){
@@ -322,12 +322,12 @@ for (i in seq_along(docs)){
 
 Again, the workflow is somewhat different if we want to include the fulltext output in a Rmarkdown document.
 
-```{r show_document_1}
+```{r show_document_1, eval = FALSE}
 h <- get_highlight_list(BE$topicmodel, partition_obj = BE$bundle[[1]], no_token = 150)
 html(BE$bundle[[1]], height = "350px") %>% highlight(highlight = h)
 ```
 
-```{r show_document_2}
+```{r show_document_2, eval = FALSE}
 h <- get_highlight_list(BE$topicmodel, partition_obj = BE$bundle[[2]], no_token = 150)
 html(BE$bundle[[2]], height = "350px") %>% highlight(highlight = h)
 ```
