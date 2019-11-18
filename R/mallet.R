@@ -88,33 +88,48 @@ mallet_make_instance_list <- function(x, p_attribute = "word", terms_to_drop = t
 }
 
 
+#' @param beta The beta matrix for a topic model.
+#' @param gamma The gamma matrix for a topic model.
 #' @details The \code{as_LDA()}-function will turn an estimated topic model
-#'   prepared using 'mallet' into a \code{LDA_Gibbs} object from the
-#'   \code{topicmodels} package.
+#'   prepared using 'mallet' into a \code{LDA_Gibbs} object as defined in the
+#'   \code{topicmodels} package. This may be useful for using topic model
+#'   evaluation tools available for the \code{LDA_Gibbs} class, but not for the
+#'   immediate output of malled topicmodelling. Note that the gamma matrix is
+#'   normalized and smoothed, the beta matrix is the logarithmized matrix of
+#'   normalized and smoothed values obtained from the input mallet topic model.
 #' @export as_LDA
 #' @importFrom pbapply pblapply
 #' @rdname mallet
-as_LDA <- function(x, verbose = TRUE){
+as_LDA <- function(x, verbose = TRUE, beta = NULL, gamma = NULL){
+  
   if (!grepl("ParallelTopicModel", x$getClass()$toString()))
     stop("incoming object needs to be class ParallelTopicModel")
-  message("... getting topic probabilities")
-  gamma <- rJava::.jevalArray(x$getDocumentTopics(TRUE, TRUE), simplify = TRUE)
-  # gamma <- do.call(
-  #   rbind,
-  #   pblapply(0L:(x$data$size() - 1L), function(i) x$getTopicProbabilities(i))
-  # )
+  
+  message("... getting number of documents and number of terms")
   dimensions <- c(
     x$data$size(), # Number of documents
     x$getAlphabet()$size() # Number of terms
   )
+  
   message("... getting alphabet")
   alphabet <- strsplit(x$getAlphabet()$toString(), "\n")[[1]]
+  
   message("... getting document names")
   docs <- pblapply(0L:(x$data$size() - 1L), function(i) x$data$get(i)$instance$getName())
-  message("... preparing beta matrix")
-  beta <- rJava::.jevalArray(x$getTopicWords(TRUE, TRUE), simplify = TRUE) 
-  # beta <- t(as.matrix(mallet_get_word_weights(x)))
-  y <- new(
+
+  message("... getting topic probabilities (gamma matrix)")
+  if (!is.null(gamma)){
+    gamma <- rJava::.jevalArray(x$getDocumentTopics(TRUE, TRUE), simplify = TRUE)
+  }
+  
+  
+  message("... getting topic word weights (beta matrix)")
+  if (!is.null(beta)){
+    beta <- rJava::.jevalArray(x$getTopicWords(TRUE, TRUE), simplify = TRUE) 
+    beta <- log(beta)
+  }
+
+  new(
     "LDA_Gibbs",
     Dim = dimensions,
     k = x$getNumTopics(),
@@ -124,7 +139,6 @@ as_LDA <- function(x, verbose = TRUE){
     gamma = gamma, # matrix, parameters of the posterior topic distribution for each document
     iter = x$numIterations
   )
-  y
 }
 
 
@@ -230,13 +244,13 @@ mallet_load_word_weights <- function(filename){
   )
 }
 
-#' @details The function \code{mallet_save_word_weights} will write a sparse
-#'   matrix to a file (argument \code{destfile}) using the method
-#'   \code{printTopicWordWeights} of the \code{ParallelTopicModel} class. The
-#'   (parsed) content of the file is equivalent to matrix that can be obtained
-#'   directly the class using the \code{getTopicWords(FALSE, TRUE)} method.
-#'   Thus, values are not normalised, but smoothed (= coefficient beta is added
-#'   to values).
+#' @details The function \code{mallet_save_word_weights} will write a file that
+#'   can be handled as a sparse matrix to a file (argument \code{destfile}).
+#'   Internally, it uses the method \code{printTopicWordWeights} of the
+#'   \code{ParallelTopicModel} class. The (parsed) content of the file is
+#'   equivalent to matrix that can be obtained directly the class using the
+#'   \code{getTopicWords(FALSE, TRUE)} method. Thus, values are not normalised,
+#'   but smoothed (= coefficient beta is added to values).
 #' @param model A (class \code{jobjRef})
 #' @rdname word_weights
 #' @export mallet_save_word_weights

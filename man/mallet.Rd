@@ -10,7 +10,7 @@
 mallet_make_instance_list(x, p_attribute = "word",
   terms_to_drop = tm::stopwords("de"), mc = TRUE, verbose = TRUE)
 
-as_LDA(x, verbose = TRUE)
+as_LDA(x, verbose = TRUE, beta = NULL, gamma = NULL)
 
 mallet_instance_list_store(x, filename = tempfile())
 
@@ -27,6 +27,10 @@ mallet_load_topicmodel(filename)
 
 \item{verbose}{A \code{logical} value, whether to be verbose.}
 
+\item{beta}{The beta matrix for a topic model.}
+
+\item{gamma}{The gamma matrix for a topic model.}
+
 \item{filename}{Where to store the Java-object.}
 
 \item{...}{further parameters}
@@ -40,8 +44,12 @@ package \code{topicmodels}.
 }
 \details{
 The \code{as_LDA()}-function will turn an estimated topic model
-  prepared using 'mallet' into a \code{LDA_Gibbs} object from the
-  \code{topicmodels} package.
+  prepared using 'mallet' into a \code{LDA_Gibbs} object as defined in the
+  \code{topicmodels} package. This may be useful for using topic model
+  evaluation tools available for the \code{LDA_Gibbs} class, but not for the
+  immediate output of malled topicmodelling. Note that the gamma matrix is
+  normalized and smoothed, the beta matrix is the logarithmized matrix of
+  normalized and smoothed values obtained from the input mallet topic model.
 }
 \examples{
  

@@ -22,13 +22,13 @@ the \code{ParallelTopicModel} class needs to be used, the \code{RTopicModel} wil
 not do it.
 }
 \details{
-The function \code{mallet_save_word_weights} will write a sparse
-  matrix to a file (argument \code{destfile}) using the method
-  \code{printTopicWordWeights} of the \code{ParallelTopicModel} class. The
-  (parsed) content of the file is equivalent to matrix that can be obtained
-  directly the class using the \code{getTopicWords(FALSE, TRUE)} method.
-  Thus, values are not normalised, but smoothed (= coefficient beta is added
-  to values).
+The function \code{mallet_save_word_weights} will write a file that
+  can be handled as a sparse matrix to a file (argument \code{destfile}).
+  Internally, it uses the method \code{printTopicWordWeights} of the
+  \code{ParallelTopicModel} class. The (parsed) content of the file is
+  equivalent to matrix that can be obtained directly the class using the
+  \code{getTopicWords(FALSE, TRUE)} method. Thus, values are not normalised,
+  but smoothed (= coefficient beta is added to values).
 }
 \examples{
 \dontrun{
