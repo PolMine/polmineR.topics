@@ -22,7 +22,8 @@ Imports:
   wordcloud,
   slam,
   shiny,
-  pbapply
+  pbapply,
+  xml2
 Suggests:
   rJava,
   mallet,

@@ -116,7 +116,9 @@ as_LDA <- function(x, verbose = TRUE, beta = NULL, gamma = NULL){
   
   message("... getting document names")
   docs <- pblapply(0L:(x$data$size() - 1L), function(i) x$data$get(i)$instance$getName())
+  # x$getDocumentNames()
 
+  
   message("... getting topic probabilities (gamma matrix)")
   if (!is.null(gamma)){
     gamma <- rJava::.jevalArray(x$getDocumentTopics(TRUE, TRUE), simplify = TRUE)
@@ -265,4 +267,84 @@ mallet_save_word_weights <- function(model, destfile = tempfile()){
   destfile 
 }
 
+
+#' Get sparse beta matrix
+#' 
+#' The beta matrix reporting word weights for topics can grow extremely large. The
+#' straight-forward ways to get the matrix can be slow and utterly memory inefficient.
+#' This function uses the \code{topicXMLReport()}-method of the \code{ParallelTopicModel}
+#' that is the most memory efficient solution we now at this stage. The trick is that
+#' weights are only reported for the top N words. Thus you can process the data as
+#' as sparse matrix, which is the memory efficient solution. See the examples as a proof
+#' that the result is equivalent indeed to the \code{getTopicWords()}-method. Note 
+#' however that the matrix is neither normalized nor smoothed nor algorithmized.
+#' 
+#' @export mallet_get_sparse_word_weights_matrix
+#' @examples 
+#' \dontrun{
+#' # x is assumed to be any ParallelTopicModel class object
+#' m <- mallet_get_sparse_word_weights_matrix(x)
+#' beta_sparse <- as.matrix(m)
+#' beta_dense <- rJava::.jevalArray(x$getTopicWords(FALSE, FALSE), simplify = TRUE) 
+#' rownames(beta_dense) <- as.character(1:nrow(beta_dense))
+#' 
+#' 
+#' identical(max(beta_sparse[1,]), as.integer(max(beta_dense[1,])))
+#' identical(
+#'   unname(head(beta_sparse[1,][order(beta_sparse[1,], decreasing = TRUE)], 5)),
+#'   as.integer(head(beta_dense[1,][order(beta_dense[1,], decreasing = TRUE)], 5))
+#' )
+#' .fn <- function(x) as.integer(unname(head(x[order(x, decreasing = TRUE)], 50)))
+#' identical(apply(beta_sparse, 1, .fn), apply(beta_dense, 1, .fn))
+#' }
+#' @importFrom xml2 read_xml xml_find_all xml_text
+mallet_get_sparse_word_weights_matrix <- function(x, n_topics = 50L, destfile = tempfile()){
+  if (!requireNamespace("rJava", quietly = TRUE))
+    stop("Package 'rJava' required, but not available.")
+  
+  file <- rJava::.jnew("java/io/File", destfile)
+  file_writer <- rJava::.jnew("java/io/FileWriter", file)
+  print_writer <- rJava::new(rJava::J("java/io/PrintWriter"), file_writer)
+  x$topicXMLReport(print_writer, n_topics)
+  print_writer$close()
+  
+  topic_xml_report <- xml2::read_xml(destfile)
+  df <- do.call(
+    rbind,
+    lapply(
+      xml2::xml_find_all(x = topic_xml_report, xpath = "/topicModel/topic"),
+      function(topic_node){
+        topic_id <- as.integer(xml2::xml_attr(x = topic_node, attr = "id"))
+        do.call(
+          rbind,
+          lapply(
+            xml2::xml_find_all(x = topic_node, xpath = "./word"),
+            function(word_node){
+              data.frame(
+                topic_id = topic_id,
+                token = xml2::xml_text(x = word_node),
+                # rank = as.integer(xml2::xml_attr(x = word_node, attr = "rank")),
+                count = as.integer(xml2::xml_attr(x = word_node, attr = "count")),
+                stringsAsFactors = FALSE
+              )
+            }
+          )
+        )
+      }
+    )
+  )
+  
+  alphabet <- strsplit(x$getAlphabet()$toString(), "\n")[[1]]
+  df[["token_id"]] <- pmatch(df[["token"]], alphabet, duplicates.ok = TRUE)
+  dt <- as.data.table(df)
+  setorderv(dt, cols = c("topic_id", "token_id"))
+  y <- slam::simple_triplet_matrix(
+    i = dt[["topic_id"]] + 1L,
+    j = dt[["token_id"]],
+    v = dt[["count"]],
+    nrow = x$getNumTopics(),
+    ncol = x$getAlphabet()$size(),
+    dimnames = list(as.character(1L:x$getNumTopics()), alphabet)
+  )
+}
 
