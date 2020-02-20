@@ -4,7 +4,7 @@
 \name{Topicanalysis}
 \alias{Topicanalysis}
 \title{Topicanalysis Class.}
-\format{An object of class \code{R6ClassGenerator} of length 24.}
+\format{An object of class \code{R6ClassGenerator} of length 25.}
 \usage{
 Topicanalysis
 }
@@ -54,6 +54,8 @@ several objects into a bundle.}
   \item{...}{Further parameters passed to worker function (such as
   \code{wordcloud::wordcloud} when calling \code{$wordcloud()}, for
   instance).}
+  \item{regex}{A regular expression that will limit the evaluation to those documents only
+  that are matched by the regular expression.}
 }
 }
 

@@ -31,6 +31,8 @@
 #'   \item{...}{Further parameters passed to worker function (such as
 #'   \code{wordcloud::wordcloud} when calling \code{$wordcloud()}, for
 #'   instance).}
+#'   \item{regex}{A regular expression that will limit the evaluation to those documents only
+#'   that are matched by the regular expression.}
 #' }
 #' 
 #' @section Methods:
@@ -254,8 +256,9 @@ Topicanalysis <- R6Class(
       wordcloud::wordcloud(words = names(tokens), freq = unname(tokens), ...)
     },
 
-    docs = function(x, y = NULL, n = 3L, s_attributes = NULL){
+    docs = function(x, y = NULL, n = 3L, s_attributes = NULL, regex = NULL){
       topic_matrix <- topics(self$topicmodel, k = n)
+      if (!is.null(regex)) topic_matrix <- topic_matrix[,grepl(regex, colnames(topic_matrix))]
       if (is.character(x)) x <- which(self$labels == x)
       x_present <- apply(topic_matrix, 2, function(column) any(x %in% column))
       

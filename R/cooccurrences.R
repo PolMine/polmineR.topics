@@ -50,10 +50,12 @@ setMethod(
     if (!is.null(docs)) topic_matrix <- topic_matrix[, which(colnames(topic_matrix) %in% docs)]
     if (!is.null(renumber)) topic_matrix <- t(apply(topic_matrix, 1, function(x) renumber[x]))
     if (verbose) message("... generating permutations")
+    
     tabs <- lapply(
       1L:ncol(topic_matrix),
       function(i){
-        x <- topic_matrix[, i]
+        x <- unique(topic_matrix[, i])
+        if (length(x) == 1L) return(NULL)
         y <- t(combn(x[order(x)], m = 2))
         rbind(y, y[, c(2,1)])
       }
