@@ -7,6 +7,8 @@
 #' @field posterior Slot to store posterior, not used at this point.
 #' @field terms The \code{matrix} with the terms of a topicmodel. Keeping the
 #'   terms may speed up subsequent operations.
+#' @field topics The \code{matrix} with the topics present in documents. Keeping
+#'   this matrix may speed up subsequent operations.
 #' @field bundle A \code{partition_bundle}, required to use method \code{read}
 #'   to access full text.
 #' @field labels A \code{character} vector, labels for the topics.
@@ -176,6 +178,7 @@ Topicanalysis <- R6Class(
     topicmodel = NULL,
     posterior = NULL,
     terms = NULL,
+    topics = NULL,
     bundle = NULL,
     labels = c(),
     name = c(),
@@ -214,10 +217,17 @@ Topicanalysis <- R6Class(
       self$exclude[n] <- new
     },
 
-    cooccurrences = function(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, exclude = TRUE){
+    cooccurrences = function(k = 3, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, verbose = FALSE, exclude = TRUE){
+      
+      if (is.null(self$topics)){
+        self$topics <- topics(self$topicmodel, k = k)
+      } else {
+        if (nrow(self$topics) != k) self$topics <- topics(self$topicmodel, k = k)
+      }
+
       if (is.null(renumber)){
         cooc <- cooccurrences(
-          self$topicmodel, k = k, regex = regex, docs = docs,
+          self$topicmodel, topic_matrix = self$topics, k = k, regex = regex, docs = docs,
           progress = progress
         )
         cooc[, "a_label" := self$labels[ cooc[["a"]] ] ]
@@ -230,8 +240,8 @@ Topicanalysis <- R6Class(
       } else {
         stopifnot(is.integer(renumber))
         cooc <- cooccurrences(
-          self$topicmodel, k = k, regex = regex, docs = docs, renumber = unname(renumber),
-          progress = progress
+          self$topicmodel, topic_matrix = self$topics, k = k, regex = regex, docs = docs, renumber = unname(renumber),
+          progress = progress, verbose = verbose
         )
         if (exclude){
           cooc <- cooc[x > 0][y > 0]
@@ -257,7 +267,14 @@ Topicanalysis <- R6Class(
     },
 
     docs = function(x, y = NULL, n = 3L, s_attributes = NULL, regex = NULL){
-      topic_matrix <- topics(self$topicmodel, k = n)
+      
+      if (is.null(self$topics)){
+        self$topics <- topics(self$topicmodel, k = n)
+      } else {
+        if (nrow(self$topics) != n) self$topics <- topics(self$topicmodel, k = n)
+      }
+      topic_matrix <- self$topics
+      
       if (!is.null(regex)) topic_matrix <- topic_matrix[,grepl(regex, colnames(topic_matrix))]
       if (is.character(x)) x <- which(self$labels == x)
       x_present <- apply(topic_matrix, 2, function(column) any(x %in% column))

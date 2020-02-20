@@ -1,6 +1,7 @@
 #' Get topic cooccurrences.
 #' 
 #' @param .Object An \code{LDA} object.
+#' @param topic_matrix A \code{matrix} with the topics present in topics.
 #' @param k An \code{integer} value, the \code{k} first topics to consider for
 #'   counting cooccurrences.
 #' @param regex If not \code{NULL} (default), the procedure will be limited to
@@ -43,9 +44,11 @@
 #' }
 setMethod(
   "cooccurrences", "TopicModel",
-  function(.Object, k, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE){
-    if (verbose) message("... getting document-topics-matrix")
-    topic_matrix <- topics(.Object, k = k)
+  function(.Object, k, topic_matrix = NULL, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE){
+    if (is.null(topic_matrix)){
+      if (verbose) message("... getting document-topic-matrix")
+      topic_matrix <- topics(.Object, k = k)
+    }
     if (!is.null(regex)) topic_matrix <- topic_matrix[, grep(regex, colnames(topic_matrix))]
     if (!is.null(docs)) topic_matrix <- topic_matrix[, which(colnames(topic_matrix) %in% docs)]
     if (!is.null(renumber)) topic_matrix <- t(apply(topic_matrix, 1, function(x) renumber[x]))
