@@ -1,11 +1,16 @@
 #' Get topic cooccurrences.
 #' 
-#' @param .Object An \code{LDA} object.
-#' @param topic_matrix A \code{matrix} with the topics present in topics.
-#' @param k An \code{integer} value, the \code{k} first topics to consider for
-#'   counting cooccurrences.
+#' @param .Object Either an object inheriting from the \code{TopicModel} class
+#'   (such as \code{LDA_Gibbs}), or a \code{matrix} with the topics present in
+#'   documents. If \code{.Object} is a \code{matrix}, each column is expected to
+#'   represent the top k topics present in a document. The \code{matrix}
+#'   returned by the \code{topics}-method from the \code{topicmodels} package
+#'   was used to develop the method, but document-term-matrices generated other
+#'   tools may work as well.
+#' @param k An \code{integer} value, the \code{k} first topics to consider when
+#'   deriving the document-topic-matrix from a trained topicmodel.
 #' @param regex If not \code{NULL} (default), the procedure will be limited to
-#'   document names matching the regular expression provided by \code{regex}.
+#'   document names matched by the regular expression stated by \code{regex}.
 #' @param docs If not \code{NULL}, the procedure will be limited to documents
 #'   matching the character string.
 #' @param renumber If not \code{NULL} (the default), an \code{integer} vector
@@ -42,22 +47,32 @@
 #'   )
 #' }
 #' }
+#' @rdname topic_cooccurrences
 setMethod(
   "cooccurrences", "TopicModel",
-  function(.Object, k, topic_matrix = NULL, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE){
-    if (is.null(topic_matrix)){
-      if (verbose) message("... getting document-topic-matrix")
-      topic_matrix <- topics(.Object, k = k)
+  function(.Object, k, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE){
+    if (verbose) message("... getting document-topic-matrix")
+    topic_matrix <- topics(.Object, k = k)
+    cooccurrences(topic_matrix, regex = regex, docs = docs, renumber = renumber, progress = progress, verbose = verbose)
+  }
+)
+
+#' @rdname topic_cooccurrences
+setMethod(
+  "cooccurrences", "matrix",
+  function(.Object, regex = NULL, docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE){
+    k <- nrow(.Object)
+    if (!is.null(regex)) .Object <- .Object[, grep(regex, colnames(.Object))]
+    if (!is.null(docs)) .Object <- .Object[, which(colnames(.Object) %in% docs)]
+    if (!is.null(renumber)){
+      .Object <- t(apply(.Object, 1, function(x) renumber[x]))
     }
-    if (!is.null(regex)) topic_matrix <- topic_matrix[, grep(regex, colnames(topic_matrix))]
-    if (!is.null(docs)) topic_matrix <- topic_matrix[, which(colnames(topic_matrix) %in% docs)]
-    if (!is.null(renumber)) topic_matrix <- t(apply(topic_matrix, 1, function(x) renumber[x]))
     if (verbose) message("... generating permutations")
     
     tabs <- lapply(
-      1L:ncol(topic_matrix),
+      1L:ncol(.Object),
       function(i){
-        x <- unique(topic_matrix[, i])
+        x <- unique(.Object[, i])
         if (length(x) == 1L) return(NULL)
         y <- t(combn(x[order(x)], m = 2))
         rbind(y, y[, c(2,1)])
@@ -69,7 +84,7 @@ setMethod(
     setnames(cnt, old = c("V1", "V2", "N"), new = c("a", "b", "ab_count"))
     
     # counting total number of topic occurrence
-    vect <- unlist(topic_matrix)
+    vect <- unlist(.Object)
     topic_count <- data.table(
       a = as.integer(names(table(vect))),
       a_total = as.integer(unname(table(vect)))

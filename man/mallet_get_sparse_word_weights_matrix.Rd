@@ -7,6 +7,14 @@
 mallet_get_sparse_word_weights_matrix(x, n_topics = 50L,
   destfile = tempfile())
 }
+\arguments{
+\item{x}{A \code{ParallelTopicModel} class object}
+
+\item{n_topics}{A length-one \code{integer} vector, the number of topics.}
+
+\item{destfile}{Length-one \code{character} vector, the filename of the
+output file.}
+}
 \description{
 The beta matrix reporting word weights for topics can grow extremely large. The
 straight-forward ways to get the matrix can be slow and utterly memory inefficient.

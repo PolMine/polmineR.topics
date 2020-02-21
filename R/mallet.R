@@ -62,7 +62,7 @@
 #' # Load topicmodel and turn it into LDA_Gibbs
 #' 
 #' mallet_lda <- mallet_load_topicmodel(destfile)
-#' topicmodels_lda <- as_LDA(mallet_lda, "LDA")
+#' topicmodels_lda <- as_LDA(mallet_lda)
 #' 
 #' @rdname mallet
 #' @importFrom polmineR get_token_stream
@@ -105,28 +105,25 @@ as_LDA <- function(x, verbose = TRUE, beta = NULL, gamma = NULL){
   if (!grepl("ParallelTopicModel", x$getClass()$toString()))
     stop("incoming object needs to be class ParallelTopicModel")
   
-  message("... getting number of documents and number of terms")
+  if (verbose) message("... getting number of documents and number of terms")
   dimensions <- c(
     x$data$size(), # Number of documents
     x$getAlphabet()$size() # Number of terms
   )
   
-  message("... getting alphabet")
+  if (verbose) message("... getting alphabet")
   alphabet <- strsplit(x$getAlphabet()$toString(), "\n")[[1]]
   
-  message("... getting document names")
+  if (verbose) message("... getting document names")
   docs <- pblapply(0L:(x$data$size() - 1L), function(i) x$data$get(i)$instance$getName())
-  # x$getDocumentNames()
 
-  
-  message("... getting topic probabilities (gamma matrix)")
-  if (!is.null(gamma)){
+  if (is.null(gamma)){
+    if (verbose) message("... getting topic probabilities (gamma matrix)")
     gamma <- rJava::.jevalArray(x$getDocumentTopics(TRUE, TRUE), simplify = TRUE)
   }
-  
-  
-  message("... getting topic word weights (beta matrix)")
-  if (!is.null(beta)){
+
+  if (is.null(beta)){
+    message("... getting topic word weights (beta matrix)")
     beta <- rJava::.jevalArray(x$getTopicWords(TRUE, TRUE), simplify = TRUE) 
     beta <- log(beta)
   }
@@ -191,6 +188,7 @@ mallet_load_topicmodel <- function(filename){
 #' the \code{ParallelTopicModel} class needs to be used, the \code{RTopicModel} will
 #' not do it.
 #' 
+#' @param filename A file with word weights.
 #' @export mallet_load_word_weights
 #' @importFrom slam simple_triplet_matrix
 #' @rdname word_weights
@@ -253,7 +251,9 @@ mallet_load_word_weights <- function(filename){
 #'   equivalent to matrix that can be obtained directly the class using the
 #'   \code{getTopicWords(FALSE, TRUE)} method. Thus, values are not normalised,
 #'   but smoothed (= coefficient beta is added to values).
-#' @param model A (class \code{jobjRef})
+#' @param model A topic model (class \code{jobjRef}).
+#' @param destfile Length-one \code{character} vector, the filename of the
+#'   output file.
 #' @rdname word_weights
 #' @export mallet_save_word_weights
 mallet_save_word_weights <- function(model, destfile = tempfile()){
@@ -279,6 +279,10 @@ mallet_save_word_weights <- function(model, destfile = tempfile()){
 #' that the result is equivalent indeed to the \code{getTopicWords()}-method. Note 
 #' however that the matrix is neither normalized nor smoothed nor algorithmized.
 #' 
+#' @param x A \code{ParallelTopicModel} class object
+#' @param n_topics A length-one \code{integer} vector, the number of topics.
+#' @param destfile Length-one \code{character} vector, the filename of the
+#'   output file.
 #' @export mallet_get_sparse_word_weights_matrix
 #' @examples 
 #' \dontrun{

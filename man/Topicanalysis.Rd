@@ -22,6 +22,9 @@ package \code{topicmodels}.}
 \item{\code{terms}}{The \code{matrix} with the terms of a topicmodel. Keeping the
 terms may speed up subsequent operations.}
 
+\item{\code{topics}}{The \code{matrix} with the topics present in documents. Keeping
+this matrix may speed up subsequent operations.}
+
 \item{\code{bundle}}{A \code{partition_bundle}, required to use method \code{read}
 to access full text.}
 

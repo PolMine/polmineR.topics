@@ -96,6 +96,6 @@ if (requireNamespace("mallet")){
 # Load topicmodel and turn it into LDA_Gibbs
 
 mallet_lda <- mallet_load_topicmodel(destfile)
-topicmodels_lda <- as_LDA(mallet_lda, "LDA")
+topicmodels_lda <- as_LDA(mallet_lda)
 
 }

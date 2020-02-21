@@ -10,7 +10,12 @@ mallet_load_word_weights(filename)
 mallet_save_word_weights(model, destfile = tempfile())
 }
 \arguments{
-\item{model}{A (class \code{jobjRef})}
+\item{filename}{A file with word weights.}
+
+\item{model}{A topic model (class \code{jobjRef}).}
+
+\item{destfile}{Length-one \code{character} vector, the filename of the
+output file.}
 }
 \description{
 The word weights matrix (weights of words for topics) can get big dataish when 

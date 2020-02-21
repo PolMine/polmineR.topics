@@ -3,19 +3,29 @@
 \docType{methods}
 \name{cooccurrences,TopicModel-method}
 \alias{cooccurrences,TopicModel-method}
+\alias{cooccurrences,matrix-method}
 \title{Get topic cooccurrences.}
 \usage{
 \S4method{cooccurrences}{TopicModel}(.Object, k, regex = NULL,
   docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE)
+
+\S4method{cooccurrences}{matrix}(.Object, regex = NULL, docs = NULL,
+  renumber = NULL, progress = TRUE, verbose = TRUE)
 }
 \arguments{
-\item{.Object}{An \code{LDA} object.}
+\item{.Object}{Either an object inheriting from the \code{TopicModel} class
+(such as \code{LDA_Gibbs}), or a \code{matrix} with the topics present in
+documents. If \code{.Object} is a \code{matrix}, each column is expected to
+represent the top k topics present in a document. The \code{matrix}
+returned by the \code{topics}-method from the \code{topicmodels} package
+was used to develop the method, but document-term-matrices generated other
+tools may work as well.}
 
-\item{k}{An \code{integer} value, the \code{k} first topics to consider for
-counting cooccurrences.}
+\item{k}{An \code{integer} value, the \code{k} first topics to consider when
+deriving the document-topic-matrix from a trained topicmodel.}
 
 \item{regex}{If not \code{NULL} (default), the procedure will be limited to
-document names matching the regular expression provided by \code{regex}.}
+document names matched by the regular expression stated by \code{regex}.}
 
 \item{docs}{If not \code{NULL}, the procedure will be limited to documents
 matching the character string.}

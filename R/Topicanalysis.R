@@ -226,10 +226,7 @@ Topicanalysis <- R6Class(
       }
 
       if (is.null(renumber)){
-        cooc <- cooccurrences(
-          self$topicmodel, topic_matrix = self$topics, k = k, regex = regex, docs = docs,
-          progress = progress
-        )
+        cooc <- cooccurrences(self$topics, regex = regex, docs = docs, progress = progress)
         cooc[, "a_label" := self$labels[ cooc[["a"]] ] ]
         cooc[, "b_label" := self$labels[cooc[["b"]] ] ]
         if (exclude){
@@ -240,7 +237,7 @@ Topicanalysis <- R6Class(
       } else {
         stopifnot(is.integer(renumber))
         cooc <- cooccurrences(
-          self$topicmodel, topic_matrix = self$topics, k = k, regex = regex, docs = docs, renumber = unname(renumber),
+          self$topics, regex = regex, docs = docs, renumber = unname(renumber),
           progress = progress, verbose = verbose
         )
         if (exclude){
