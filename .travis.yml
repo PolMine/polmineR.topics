@@ -11,6 +11,7 @@ addons:
 
 before_install:
   - Rscript -e 'install.packages("rmarkdown")'
+  - Rscript -e 'install.packages("rJava")'
 
 r_packages:
   - plyr
