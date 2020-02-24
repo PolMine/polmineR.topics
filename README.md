@@ -9,7 +9,7 @@ Status](https://api.travis-ci.org/PolMine/topicanalysis.svg?branch=master)](http
 Status](https://ci.appveyor.com/api/projects/status/github/PolMine/topicanalysis?branch=master&svg=true)](https://ci.appveyor.com/project/PolMine/topicanalysis)
 [![codecov](https://codecov.io/gh/PolMine/topicanalysis/branch/master/graph/badge.svg)](https://codecov.io/gh/PolMine/topicanalysis/branch/master)
 
-# About
+## About
 
 Using topic models, an unsupervised learning approach developed for
 information retrieval, has become common in the humanities and the
@@ -18,3 +18,49 @@ relocation of topic modelling requires the development of best practices
 and tools how validity can be ensured. The **topicanalysis** package
 offers a toolset to evaluate topic models, and to support validation by
 offering a nexus between quantitative and qualitative inquiry.
+
+## Installation
+
+### Windows
+
+Installation on Windows has not been tested at this stage, but should be
+possible. Installing the package from GitHub requires the devtools
+package. Note that an Installation of Rtools will be a prerequisite to
+get Rtools installed.
+
+``` r
+devtools::install_github("PolMine/topicanalysis")
+```
+
+### macOS
+
+Installing the topicmodels package may require to have the GNU
+Scientific Library installed (GSL). We recomment to use the brew package
+manager to meet this system requirement.
+
+``` sh
+brew install gsl
+```
+
+The topicanalysis package is a GitHub-only package at this stage. Using
+the installation mechanism from the devtools package, you can install it
+as follows:
+
+``` r
+devtools::install_github("PolMine/topicanalysis")
+```
+
+### Linux
+
+The package relies on the
+[topicmodels](https://CRAN.R-project.org/package=topicmodels) package
+which has the GNU Scientific Library (GSL) as a system requirement.
+Install it as follows.
+
+``` sh
+sudo apt-get install libgsl-dev
+```
+
+``` r
+devtools::install_github("PolMine/topicanalysis")
+```

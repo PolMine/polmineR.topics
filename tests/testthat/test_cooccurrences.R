@@ -91,3 +91,20 @@ test_that(
     expect_equal(coocs[a == 1][b == 6][["count_coi"]], n_docs_method)
   }
 )
+
+test_that(
+  "check that using list as input for argument renumber for cooccurrences method works",
+  {
+    data(BE_lda, BE_labels)
+    renumber_li <- list(
+      school = grep("Grundschule", BE_labels),
+      cummunity = grep("Gemeindeentwicklung", BE_labels),
+      traffic = grep("Verkehrsmittel", BE_labels)
+    )
+    dt <- cooccurrences(BE_lda, k = 3L, renumber = renumber_li)
+    a_n <- unique(dt[a == grep("Grundschule", BE_labels)[1]][["a_total"]])
+    TA <- Topicanalysis$new(BE_lda)
+    a_n2 <- length(TA$docs(x = renumber_li[["school"]], n = 3L))
+    expect_identical(a_n, a_n2)
+  }
+)

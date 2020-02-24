@@ -7,10 +7,12 @@
 \title{Get topic cooccurrences.}
 \usage{
 \S4method{cooccurrences}{TopicModel}(.Object, k, regex = NULL,
-  docs = NULL, renumber = NULL, progress = TRUE, verbose = TRUE)
+  docs = NULL, renumber = NULL, method = "chisquare",
+  progress = TRUE, verbose = TRUE)
 
 \S4method{cooccurrences}{matrix}(.Object, regex = NULL, docs = NULL,
-  renumber = NULL, progress = TRUE, verbose = TRUE)
+  renumber = NULL, method = "chisquare", progress = TRUE,
+  verbose = TRUE)
 }
 \arguments{
 \item{.Object}{Either an object inheriting from the \code{TopicModel} class
@@ -18,8 +20,8 @@
 documents. If \code{.Object} is a \code{matrix}, each column is expected to
 represent the top k topics present in a document. The \code{matrix}
 returned by the \code{topics}-method from the \code{topicmodels} package
-was used to develop the method, but document-term-matrices generated other
-tools may work as well.}
+was used to develop the method, but document-term-matrices derived
+otherwise tools may work as well.}
 
 \item{k}{An \code{integer} value, the \code{k} first topics to consider when
 deriving the document-topic-matrix from a trained topicmodel.}
@@ -30,15 +32,50 @@ document names matched by the regular expression stated by \code{regex}.}
 \item{docs}{If not \code{NULL}, the procedure will be limited to documents
 matching the character string.}
 
-\item{renumber}{If not \code{NULL} (the default), an \code{integer} vector
-(length = number of topics) supplying new topic numbers.}
+\item{renumber}{If not \code{NULL} (the default), topics in the
+document-topic-matrix will be renumbered according to the argument
+\code{renumber}. If \code{renumber} is an integer vector, the length of
+this vector is required to match the number of topics in topic model. Each
+topic i present in the document-topic matrix will be mapped on the value at
+position i of the vector. If \code{renumber} is a \code{list} of integer
+vectors, these vectors are considered as groups of topics that represent a
+single implict "super-topic". For each integer vector present in the
+\code{list}, the topic numbers present in the document-topic-matrix will be
+matched on the first value of the vector.}
 
-\item{progress}{A \code{logical} value.}
+\item{method}{The statistic to calculate co-occurrences, "chisquare" by
+default.}
 
-\item{verbose}{A \code{logical} value.}
+\item{progress}{A \code{logical} value, whether to show a progress bar.}
+
+\item{verbose}{A \code{logical} value, whether to output messages on the
+state of affairs.}
+}
+\value{
+A \code{data.table} with co-occurrence statistics with the following
+  columns:
+\describe{
+  \item{a}{number of the topic of interest}
+  \item{b}{number of the co-occurring topic}
+  \item{b_total}{number of total occurrences of topic b; if the
+  document-topic matrix has been renumbered, the times at least one of the
+  topics in a group occurs in a docuent}
+  \item{b_total}{number of total occurrences of topic a; if the
+  document-topic matrix has been renumbered, the times at least one of the
+  topics in a group occurs in a docuent}
+  \item{count_coi}{number of joint occurrences of topics a and b}
+  \item{count_ref}{number of occurrences of b without co-occurring of a}
+}
+If argument \code{method} is not \code{NULL}, additional columns will be 
+included in the topic co-occurrence table. E.g. if \code{method} is "chisquare",
+a column "exp_coi", will report the expected number of occurrences of b together with a,
+column "chisquare" will report the value of the chi squared test, and a 
+column "rank_chisquare" will report the rank of the statistical significance of the 
+co-occurrence of a and b according to the chi squared test.
 }
 \description{
-Get topic cooccurrences.
+Topic models describe documents as composed of different topics. This 
+property can be used to obtain co-occuurrence statistics of topics.
 }
 \examples{
 data(BE_lda, BE_labels)
@@ -48,6 +85,7 @@ dt_min <- dt[chisquare >= 10.83][!a \%in\% topics_to_drop][!b \%in\% topics_to_d
 dt_min[, "a_label" := BE_labels[ dt_min[["a"]] ] ]
 dt_min[, "b_label" := BE_labels[ dt_min[["b"]] ] ]
 
+# Using the cooccurrence data for generating a network visualisation
 if (requireNamespace("igraph")){
 g <- igraph::graph_from_data_frame(
   d = data.frame(
@@ -60,10 +98,20 @@ g <- igraph::graph_from_data_frame(
 )
 g <- igraph::as.undirected(g, mode = "collapse")
 if (interactive()){
-  plot.igraph(
+  igraph::plot.igraph(
     g, shape = "square", vertex.color = "steelblue",
-    label = V(g)$name, label.family = 11, label.cex = 0.5
+    label = igraph::V(g)$name, label.family = 11, label.cex = 0.5
   )
 }
 }
+
+# Example how to use the argument 'renumber' if a concept is represented by 
+# several topics 
+renumber_li <- list(
+  school = grep("Grundschule", BE_labels),
+  cummunity = grep("Gemeindeentwicklung", BE_labels),
+  traffic = grep("Verkehrsmittel", BE_labels)
+)
+dt <- cooccurrences(BE_lda, k = 3L, renumber = renumber_li)
+dt[a == grep("Grundschule", BE_labels)[1]][chisquare > 10.83]
 }

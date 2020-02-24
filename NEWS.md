@@ -1,8 +1,21 @@
+topicanalysis 0.1.19
+====================
+
+* Substantial improvement of the documentation of the `cooccurrences()`-method.
+* The `cooccurrences()`-method now accepts an argument `method` to determine the
+statistical test to be applied.
+* The total number of occurrences of topics a and b will now be reported in the
+`data.table` resulting from the `cooccurrences()`-method.
+* A flaw in the calculation of the number of total occurrences in the `cooccurrences()`-method
+has been removed, when renumbering topics.
+
+
 topicanalysis 0.1.18
 ====================
 
 * The argument `topic_matrix` of the `cooccurrences()`-method has been discarded again. Instead,
 the method is now defined for the `TopicModel` class and the `matrix` class. If multiple calculations are carried out, it may be much faster to generate the document-term-matrix once outside the `cooccurrences()`-method, and to apply the method on the matrix.
+
 
 topicanalysis 0.1.17
 ====================

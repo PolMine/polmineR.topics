@@ -5,6 +5,7 @@ addons:
   apt:
     packages:
     - libxml2-dev
+    - libgsl-dev
 
 before_install:
   - Rscript -e 'install.packages("rmarkdown")'
