@@ -6,6 +6,8 @@ addons:
     packages:
     - libxml2-dev
     - libgsl-dev
+    - default-jdk
+
 
 before_install:
   - Rscript -e 'install.packages("rmarkdown")'
@@ -14,6 +16,7 @@ r_packages:
   - plyr
   - tm
   - tidytext
+  - rJava
   - covr
   - rmarkdown
 
