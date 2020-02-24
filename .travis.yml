@@ -6,7 +6,7 @@ addons:
     packages:
     - libxml2-dev
     - libgsl-dev
-    - default-jdk
+    - r-cran-rjava
 
 
 before_install:
