@@ -19,8 +19,8 @@ platform: x64
 
 environment:
   R_ARCH: x64
-  R_BUILD_ARGS: --no-multiarch
-  R_CHECK_ARGS: --no-multiarch
+  R_BUILD_ARGS: "--no-multiarch"
+  R_CHECK_ARGS: "--no-multiarch --no-manual"
   KEEP_VIGNETTES: FALSE
 
 build_script:
