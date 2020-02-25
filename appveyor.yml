@@ -9,12 +9,6 @@ init:
 
 install:
   - ps: Bootstrap
-    # Install miktex
-  - if not exist c:\miktex\texmfs\install\miktex\bin\pdflatex.exe appveyor DownloadFile http://miktex.org/download/ctan/systems/win32/miktex/setup/windows-x86/miktex-portable.exe
-  - if not exist c:\miktex\texmfs\install\miktex\bin\pdflatex.exe 7z x miktex-portable.exe -oC:\miktex >NUL
-  - set "PATH=%PATH%;c:\miktex\texmfs\install\miktex\bin"
-  # Enable installing miktex  packages on the fly
-  - initexmf --set-config-value [MPM]AutoInstall=1
 
 cache:
   - C:\RLibrary
@@ -27,6 +21,7 @@ environment:
   R_ARCH: x64
   R_BUILD_ARGS: --no-multiarch
   R_CHECK_ARGS: --no-multiarch
+  KEEP_VIGNETTES: FALSE
 
 build_script:
   - travis-tool.sh install_deps
