@@ -146,7 +146,7 @@ The topicmodel has been labelled: We drop topics that do not refer to a substant
 ```{r cooc_table_minimize}
 topics_to_drop <- grep("^\\(.*?\\)$", BE_labels)
 dt_min <- dt[chisquare >= 10.83][!a %in% topics_to_drop][!b %in% topics_to_drop]
-DT::datatable(dt_min)
+if (interactive()) DT::datatable(dt_min)
 ```
 
 Let us pimp the table somewhat to have labels, not integer ids for topics.
@@ -158,7 +158,7 @@ dt_min[, "a" := NULL]
 dt_min[, "b" := NULL]
 dt_min[, "rank_chisquare" := NULL]
 setcolorder(dt_min, neworder = c("a_label", "b_label", "count_coi", "count_ref", "exp_coi", "chisquare"))
-DT::datatable(dt_min)
+if (interactive()) DT::datatable(dt_min)
 ```
 
 
