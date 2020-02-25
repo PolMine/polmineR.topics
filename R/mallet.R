@@ -62,7 +62,9 @@
 #' # Load topicmodel and turn it into LDA_Gibbs
 #' 
 #' mallet_lda <- mallet_load_topicmodel(destfile)
+#' \dontrun{
 #' topicmodels_lda <- as_LDA(mallet_lda)
+#' }
 #' 
 #' @rdname mallet
 #' @importFrom polmineR get_token_stream
@@ -101,7 +103,7 @@ mallet_make_instance_list <- function(x, p_attribute = "word", terms_to_drop = t
 #' @importFrom pbapply pblapply
 #' @rdname mallet
 as_LDA <- function(x, verbose = TRUE, beta = NULL, gamma = NULL){
-  
+
   if (!grepl("ParallelTopicModel", x$getClass()$toString()))
     stop("incoming object needs to be class ParallelTopicModel")
   

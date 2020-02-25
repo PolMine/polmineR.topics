@@ -20,6 +20,7 @@ r_packages:
   - rJava
   - covr
   - rmarkdown
+  - webshot
 
 r_github_packages:
   - r-lib/covr
