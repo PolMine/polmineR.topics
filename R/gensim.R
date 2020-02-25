@@ -6,22 +6,28 @@
 #' @param modelname Name of a gensim LDA topic model. The data for a model
 #'   consists of a set of files starting with the modelname each.
 #' @examples
+#' \dontrun{
 #' if (requireNamespace("reticulate")){
 #'   gensim <- reticulate::import("gensim")
 #' 
 #'   modeldir <- system.file(package = "topicanalysis", "extdata", "gensim")
 #'   modelname <- "germaparlmini"
 #'   
-#'   dtm <- readRDS(file = system.file(package = "topicanalysis", "extdata", "gensim", "germaparlmini_dtm.rds"))
+#'   dtm <- readRDS(
+#'     file = system.file(
+#'       package = "topicanalysis", "extdata", "gensim", "germaparlmini_dtm.rds"
+#'     )
+#'   )
 #'   
 #'   lda <- gensim_ldamodel_load(
 #'     modeldir = system.file(package = "topicanalysis", "extdata", "gensim"),
-#'     modelname <- "germaparlmini"
+#'     modelname = "germaparlmini"
 #'   )
 #' 
 #'   y <- gensim_ldamodel_as_LDA_Gibbs(model = lda, dtm = dtm)
 #'   topics_terms <- topicmodels::get_terms(y, 10)
 #'   docs_topics <- topicmodels::get_topics(y, 5)
+#' }
 #' }
 #' @export gensim_ldamodel_as_LDA_Gibbs
 #' @details The \code{gensim_ldamodel_as_LDA_Gibbs()}-function turns a

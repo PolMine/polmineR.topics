@@ -52,8 +52,8 @@ default.}
 state of affairs.}
 }
 \value{
-A \code{data.table} with co-occurrence statistics with the following
-  columns:
+A \code{data.table} with co-occurrence statistics with at least the
+  following columns:
 \describe{
   \item{a}{number of the topic of interest}
   \item{b}{number of the co-occurring topic}

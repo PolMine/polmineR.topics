@@ -41,22 +41,28 @@ The input to gensim's LDA modelling methods is a representation of
   \code{simple_triplet_matrix}) into the bow input format required by gensim.
 }
 \examples{
+\dontrun{
 if (requireNamespace("reticulate")){
   gensim <- reticulate::import("gensim")
 
   modeldir <- system.file(package = "topicanalysis", "extdata", "gensim")
   modelname <- "germaparlmini"
   
-  dtm <- readRDS(file = system.file(package = "topicanalysis", "extdata", "gensim", "germaparlmini_dtm.rds"))
+  dtm <- readRDS(
+    file = system.file(
+      package = "topicanalysis", "extdata", "gensim", "germaparlmini_dtm.rds"
+    )
+  )
   
   lda <- gensim_ldamodel_load(
     modeldir = system.file(package = "topicanalysis", "extdata", "gensim"),
-    modelname <- "germaparlmini"
+    modelname = "germaparlmini"
   )
 
   y <- gensim_ldamodel_as_LDA_Gibbs(model = lda, dtm = dtm)
   topics_terms <- topicmodels::get_terms(y, 10)
   docs_topics <- topicmodels::get_topics(y, 5)
+}
 }
 }
 \author{
