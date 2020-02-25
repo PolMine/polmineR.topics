@@ -8,6 +8,8 @@ statistical test to be applied.
 `data.table` resulting from the `cooccurrences()`-method.
 * A flaw in the calculation of the number of total occurrences in the `cooccurrences()`-method
 has been removed, when renumbering topics.
+* Added packages rmarkdown and webshot to "Suggests" section in DESCRIPTION to pass
+tests on appveyor.
 
 
 topicanalysis 0.1.18

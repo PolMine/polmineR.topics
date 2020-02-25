@@ -36,7 +36,9 @@ Suggests:
   DT,
   cwbtools,
   magrittr,
-  reticulate
+  reticulate,
+  rmarkdown,
+  webshot
 LazyData: false
 VignetteBuilder: knitr
 Collate:
