@@ -1,3 +1,9 @@
+topicanalysis 0.1.21
+====================
+
+* New function `mallet_instance_list_store` to load a Java InstanceList object 
+from disk (#9).
+
 topicanalysis 0.1.19
 ====================
 

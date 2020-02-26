@@ -4,6 +4,7 @@
 \alias{mallet_make_instance_list}
 \alias{as_LDA}
 \alias{mallet_instance_list_store}
+\alias{mallet_instance_list_load}
 \alias{mallet_load_topicmodel}
 \title{Interface to mallet topicmodelling.}
 \usage{
@@ -13,6 +14,8 @@ mallet_make_instance_list(x, p_attribute = "word",
 as_LDA(x, verbose = TRUE, beta = NULL, gamma = NULL)
 
 mallet_instance_list_store(x, filename = tempfile())
+
+mallet_instance_list_load(filename)
 
 mallet_load_topicmodel(filename)
 }
@@ -50,6 +53,12 @@ The \code{as_LDA()}-function will turn an estimated topic model
   immediate output of malled topicmodelling. Note that the gamma matrix is
   normalized and smoothed, the beta matrix is the logarithmized matrix of
   normalized and smoothed values obtained from the input mallet topic model.
+
+The function \code{mallet_instance_list_load} will load a Java
+  InstanceList object that has been saved to disk (e.g. by using the
+  \code{mallet_instance_list_store} function). The return value is a
+  \code{jobjRef} object. Internally, the function reuses code of the function
+  \code{load.mallet.instances} from the R package \code{mallet}.
 }
 \examples{
  
