@@ -4,8 +4,7 @@
 \alias{mallet_get_sparse_word_weights_matrix}
 \title{Get sparse beta matrix}
 \usage{
-mallet_get_sparse_word_weights_matrix(x, n_topics = 50L,
-  destfile = tempfile())
+mallet_get_sparse_word_weights_matrix(x, n_topics = 50L, destfile = tempfile())
 }
 \arguments{
 \item{x}{A \code{ParallelTopicModel} class object}

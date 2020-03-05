@@ -56,7 +56,7 @@ lda$train(100)
 # is that the arguments of the $getTopicWords()-method are FALSE 
 # (argument 'normalized') and TRUE (argument 'smoothed')
 beta_1 <- rJava::.jevalArray(lda$getTopicWords(FALSE, TRUE), simplify = TRUE) 
-alphabet <- strsplit(lda$getAlphabet()$toString(), "\\n")[[1]]
+alphabet <- strsplit(lda$getAlphabet()$toString(), "\n")[[1]]
 colnames(beta_1) <- alphabet
 beta_1 <- beta_1[, alphabet[order(alphabet)] ]
 rownames(beta_1) <- as.character(1:nrow(beta_1))

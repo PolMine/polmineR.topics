@@ -1,3 +1,7 @@
+topicanalysis 0.1.22
+====================
+* The function `mallet_make_instance_list()` now accepts an argument `phrases` (#10).
+
 topicanalysis 0.1.21
 ====================
 

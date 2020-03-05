@@ -8,8 +8,14 @@
 \alias{mallet_load_topicmodel}
 \title{Interface to mallet topicmodelling.}
 \usage{
-mallet_make_instance_list(x, p_attribute = "word",
-  terms_to_drop = tm::stopwords("de"), mc = TRUE, verbose = TRUE)
+mallet_make_instance_list(
+  x,
+  p_attribute = "word",
+  phrases = NULL,
+  terms_to_drop = tm::stopwords("de"),
+  mc = TRUE,
+  verbose = TRUE
+)
 
 as_LDA(x, verbose = TRUE, beta = NULL, gamma = NULL)
 
@@ -23,6 +29,9 @@ mallet_load_topicmodel(filename)
 \item{x}{A \code{partition_bundle} object.}
 
 \item{p_attribute}{The p_attribute to use, typically "word" or "lemma".}
+
+\item{phrases}{A \code{phrases} object (S4 class from polmineR) that will be
+used to concatenate phrases.}
 
 \item{terms_to_drop}{stopwords}
 
@@ -59,6 +68,9 @@ The function \code{mallet_instance_list_load} will load a Java
   \code{mallet_instance_list_store} function). The return value is a
   \code{jobjRef} object. Internally, the function reuses code of the function
   \code{load.mallet.instances} from the R package \code{mallet}.
+
+The function \code{mallet_load_topicmodel} will load a topic model
+  created using mallet into memory.
 }
 \examples{
  

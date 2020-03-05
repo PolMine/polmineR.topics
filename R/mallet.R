@@ -10,6 +10,8 @@
 #' @param terms_to_drop stopwords
 #' @param ... further parameters
 #' @param p_attribute The p_attribute to use, typically "word" or "lemma".
+#' @param phrases A \code{phrases} object (S4 class from polmineR) that will be
+#'   used to concatenate phrases.
 #' @param mc A \code{logical} value, whether to use multicore.
 #' @param verbose A \code{logical} value, whether to be verbose.
 #' @param filename Where to store the Java-object.
@@ -69,12 +71,11 @@
 #' @rdname mallet
 #' @importFrom polmineR get_token_stream
 #' @export mallet_make_instance_list
-mallet_make_instance_list <- function(x, p_attribute = "word", terms_to_drop = tm::stopwords("de"), mc = TRUE, verbose = TRUE){
+mallet_make_instance_list <- function(x, p_attribute = "word", phrases = NULL, terms_to_drop = tm::stopwords("de"), mc = TRUE, verbose = TRUE){
   if (!requireNamespace(package = "rJava", quietly = TRUE)) stop("rJava package not available")
   if (!requireNamespace(package = "mallet", quietly = TRUE)) stop("mallet package not available")
   
-  .fn <- function(subcorpus) get_token_stream(subcorpus, p_attribute = p_attribute, collapse = "\n")
-  token_stream_list <- if (!mc) lapply(x@objects, .fn) else mclapply(x@objects, .fn)
+  token_stream_list <- get_token_stream(x, p_attribute = p_attribute, phrases = phrases, collapse = "\n")
   token_stream_vec <- unlist(token_stream_list)
   rm(token_stream_list)
   
@@ -165,6 +166,8 @@ mallet_instance_list_load <- function(filename){
   rJava::J("cc.mallet.types.InstanceList")$load(rJava::.jnew("java/io/File", filename))
 }
 
+#' @details The function \code{mallet_load_topicmodel} will load a topic model
+#'   created using mallet into memory.
 #' @rdname mallet
 #' @export mallet_load_topicmodel
 mallet_load_topicmodel <- function(filename){
